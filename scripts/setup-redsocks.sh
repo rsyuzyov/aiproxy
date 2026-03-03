@@ -26,10 +26,23 @@ require_root() {
   fi
 }
 
+prepare_noninteractive_apt() {
+  export DEBIAN_FRONTEND=noninteractive
+
+  # Убрать интерактивные вопросы iptables-persistent в контейнерах/CI
+  if command -v debconf-set-selections &>/dev/null; then
+    echo 'iptables-persistent iptables-persistent/autosave_v4 boolean false' | debconf-set-selections || true
+    echo 'iptables-persistent iptables-persistent/autosave_v6 boolean false' | debconf-set-selections || true
+  fi
+}
+
 install_redsocks() {
   if command -v redsocks &>/dev/null; then
     return
   fi
+
+  prepare_noninteractive_apt
+
   log_info "Устанавливаю redsocks..."
   apt-get update -qq
   apt-get install -y -qq redsocks iptables netfilter-persistent iptables-persistent
@@ -148,20 +161,18 @@ setup_iptables() {
   log_success "iptables настроен"
 }
 
-enable_redsocks_service() {
+prepare_redsocks_service() {
   # Проверить конфиг
   redsocks -t -c /etc/redsocks.conf || { log_error "Ошибка в конфигурации redsocks"; exit 1; }
 
+  # Включаем unit, но старт/стоп делаем через proxy-toggle.sh
   systemctl enable redsocks >/dev/null 2>&1 || true
-  systemctl restart redsocks
+  log_success "Служба redsocks подготовлена"
+}
 
-  sleep 1
-
-  if systemctl is-active --quiet redsocks; then
-    log_success "redsocks запущен"
-  else
-    log_warn "redsocks не запустился. Проверьте: journalctl -u redsocks -n 20"
-  fi
+set_initial_bypass_mode() {
+  log_info "Применяю начальный режим прокси: OFF (как proxy-toggle.sh off)..."
+  /usr/local/bin/proxy-toggle.sh off
 }
 
 show_usage() {
@@ -206,8 +217,9 @@ main() {
   install_redsocks
   install_proxy_toggle
   write_redsocks_conf "${PROXY_IP}" "${PROXY_PORT}" "${PROXY_LOGIN}" "${PROXY_PASSWORD}" "${LOCAL_PORT}"
-  enable_redsocks_service
+  prepare_redsocks_service
   setup_iptables "${PROXY_IP}" "${LOCAL_PORT}"
+  set_initial_bypass_mode
 
   echo ""
   log_success "redsocks настроен: ${PROXY_IP}:${PROXY_PORT}"

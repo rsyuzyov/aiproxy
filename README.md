@@ -4,27 +4,27 @@
 
 ## Что включает
 
-| Компонент          | Описание                                                                                                                           |
-| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
-| **cliproxy-api**   | AI-прокси сервер с поддержкой OpenAI/Gemini/Claude API ([router-for-me/CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI)) |
-| **9router**        | Веб-роутер на Node.js для управления маршрутами                                                                                    |
-| **xrdp + openbox** | RDP-доступ к рабочему столу через Openbox                                                                                          |
-| **Firefox ESR**    | Браузер (опционально)                                                                                                              |
-| **Brave Browser**  | Альтернативный браузер (опционально)                                                                                               |
-| **redsocks**       | Перенаправление TCP-трафика через SOCKS5 прокси                                                                                    |
+| Компонент          | Описание                                           |
+| ------------------ | -------------------------------------------------- |
+| **cliproxy-api**   | AI-прокси сервер с поддержкой OpenAI/Gemini/Claude |
+| **9router**        | Еще один AI-прокси сервер                          |
+| **xrdp + openbox** | RDP-доступ к рабочему столу                        |
+| **Firefox ESR**    | Браузер (опционально)                              |
+| **Brave Browser**  | Альтернативный браузер (опционально)               |
+| **redsocks**       | Перенаправление TCP-трафика через SOCKS5 прокси    |
 
 ## Быстрый старт
 
 ### Однострочная команда установки
 
 ```bash
-wget -qO- https://raw.githubusercontent.com/YOUR_GITHUB_USER/aiproxy/main/install.sh | bash
+wget -qO- https://raw.githubusercontent.com/rsyuzyov/aiproxy/main/install.sh | bash
 ```
 
 ### Или: клонировать и запустить
 
 ```bash
-git clone https://github.com/YOUR_GITHUB_USER/aiproxy.git ~/aiproxy
+git clone https://github.com/rsyuzyov/aiproxy.git ~/aiproxy
 cd ~/aiproxy
 bash install.sh
 ```

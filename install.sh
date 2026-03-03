@@ -32,6 +32,35 @@ require_root() {
   fi
 }
 
+# --- Локали (для корректной кириллицы и стабильной работы apt/debconf) ---
+ensure_locales() {
+  log_step "Настройка локалей (en_US.UTF-8 и ru_RU.UTF-8)"
+
+  export DEBIAN_FRONTEND=noninteractive
+  apt-get update -qq
+  apt-get install -y -qq locales
+
+  if grep -q '^#\s*en_US.UTF-8 UTF-8' /etc/locale.gen; then
+    sed -i 's/^#\s*en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen
+  elif ! grep -q '^en_US.UTF-8 UTF-8' /etc/locale.gen; then
+    echo 'en_US.UTF-8 UTF-8' >> /etc/locale.gen
+  fi
+
+  if grep -q '^#\s*ru_RU.UTF-8 UTF-8' /etc/locale.gen; then
+    sed -i 's/^#\s*ru_RU.UTF-8 UTF-8/ru_RU.UTF-8 UTF-8/' /etc/locale.gen
+  elif ! grep -q '^ru_RU.UTF-8 UTF-8' /etc/locale.gen; then
+    echo 'ru_RU.UTF-8 UTF-8' >> /etc/locale.gen
+  fi
+
+  locale-gen en_US.UTF-8 ru_RU.UTF-8 >/dev/null
+  update-locale LANG=ru_RU.UTF-8 LC_ALL=ru_RU.UTF-8
+
+  export LANG=ru_RU.UTF-8
+  export LC_ALL=ru_RU.UTF-8
+
+  log_success "Локали настроены: LANG=${LANG}, LC_ALL=${LC_ALL}"
+}
+
 # --- Парсинг аргументов командной строки ---
 # Режим без интерактива: install.sh --cliproxy --9router --xrdp --firefox
 NON_INTERACTIVE=false
@@ -268,6 +297,7 @@ EOF
 # =============================================================================
 main() {
   require_root
+  ensure_locales
 
   # Если запускаем через pipe (wget|bash), нет аргументов → скачать и перезапустить
   if [ "$#" -eq 0 ] && [ ! -d "${INSTALL_DIR}/.git" ]; then
