@@ -3,7 +3,7 @@
 Требования и порядок:
 
 - Подключись к hv1.
-- Создай новый LXC aiproxy-test (если не создан, Debian 12, 2 vCPU, 4GB RAM, диск 4GB, DHCP, пароль 1234567890).
+- Создай новый LXC aiproxy-test (если не создан, Debian 12, 2 vCPU, 4GB RAM, диск 4GB, DHCP, ). Установи пароль 1234567890.
 - Сразу после создания сделай snapshot before_install_YYYYMMDD_HHMMSS.
 - Запусти установку строго однострочником из README.md, без локального копирования файлов.
 - Для redsocks передай тестовые переменные окружения (PROXY_IP/PROXY_PORT/PROXY_LOGIN/PROXY_PASS), чтобы не ломался non-interactive путь в install.sh.
