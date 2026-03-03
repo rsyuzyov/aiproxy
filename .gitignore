@@ -1,0 +1,15 @@
+# Секреты и конфиги с паролями
+*.key
+*.pem
+config.yaml
+.env
+
+# Редакторы
+.vscode/
+.idea/
+*.swp
+*~
+
+# OS
+.DS_Store
+Thumbs.db
