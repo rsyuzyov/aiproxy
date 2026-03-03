@@ -18,7 +18,7 @@
 ### Однострочная команда установки
 
 ```bash
-wget -O- https://raw.githubusercontent.com/rsyuzyov/aiproxy/main/install.sh | bash
+wget -O- https://raw.githubusercontent.com/rsyuzyov/aiproxy/master/install.sh | bash
 ```
 
 ### Или: клонировать и запустить

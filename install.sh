@@ -5,8 +5,8 @@
 # =============================================================================
 set -euo pipefail
 
-REPO_URL="https://github.com/YOUR_GITHUB_USER/aiproxy"
-REPO_RAW="https://raw.githubusercontent.com/YOUR_GITHUB_USER/aiproxy/main"
+REPO_URL="https://github.com/rsyuzyov/aiproxy"
+REPO_RAW="https://raw.githubusercontent.com/rsyuzyov/aiproxy/master"
 INSTALL_DIR="${HOME}/aiproxy"
 
 # --- Цвета ---
