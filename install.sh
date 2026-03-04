@@ -70,6 +70,7 @@ DO_XRDP=false
 DO_FIREFOX=false
 DO_BRAVE=false
 DO_REDSOCKS=false
+DO_AMNEZIA=false
 
 parse_args() {
   for arg in "$@"; do
@@ -77,13 +78,15 @@ parse_args() {
       --non-interactive|-y) NON_INTERACTIVE=true ;;
       --all)
         DO_CLIPROXY=true; DO_9ROUTER=true; DO_XRDP=true
-        DO_FIREFOX=true; DO_BRAVE=false; DO_REDSOCKS=true ;;
+        DO_FIREFOX=true; DO_BRAVE=false; DO_REDSOCKS=true
+        DO_AMNEZIA=true ;;
       --cliproxy)  DO_CLIPROXY=true ;;
       --9router)   DO_9ROUTER=true ;;
       --xrdp)      DO_XRDP=true ;;
       --firefox)   DO_FIREFOX=true ;;
       --brave)     DO_BRAVE=true ;;
       --redsocks)  DO_REDSOCKS=true ;;
+      --amnezia)   DO_AMNEZIA=true ;;
       --help|-h)   show_help; exit 0 ;;
       *) log_warn "Неизвестный аргумент: $arg" ;;
     esac
@@ -105,6 +108,7 @@ ${BOLD}AIProxy Setup Installer${NC}
   --firefox           Установить Firefox ESR
   --brave             Установить Brave Browser
   --redsocks          Настроить redsocks (прокси)
+  --amnezia           Установить AmneziaWG VPN-клиент
   --non-interactive   Неинтерактивный режим (требует явных флагов)
   -y                  Синоним --non-interactive
   --help              Показать эту справку
@@ -118,6 +122,9 @@ ${BOLD}AIProxy Setup Installer${NC}
 
   # Только cliproxy-api и xrdp:
   bash install.sh --cliproxy --xrdp -y
+
+  # Только AmneziaWG:
+  bash install.sh --amnezia -y
 EOF
 }
 
@@ -168,6 +175,7 @@ EOF
   ask_yn "Установить Firefox ESR?" && DO_FIREFOX=true || true
   ask_yn "Установить Brave Browser?" && DO_BRAVE=true || true
   ask_yn "Настроить redsocks (SOCKS5 прокси)?" && DO_REDSOCKS=true || true
+  ask_yn "Установить AmneziaWG VPN-клиент?" && DO_AMNEZIA=true || true
 
   echo ""
   log_step "Выбранные компоненты"
@@ -177,10 +185,12 @@ EOF
   [ "$DO_FIREFOX"  = "true" ] && log_info "✓ Firefox ESR"
   [ "$DO_BRAVE"    = "true" ] && log_info "✓ Brave Browser"
   [ "$DO_REDSOCKS" = "true" ] && log_info "✓ redsocks"
+  [ "$DO_AMNEZIA"  = "true" ] && log_info "✓ AmneziaWG VPN"
 
   if [ "$DO_CLIPROXY" = "false" ] && [ "$DO_9ROUTER" = "false" ] && \
      [ "$DO_XRDP" = "false" ] && [ "$DO_FIREFOX" = "false" ] && \
-     [ "$DO_BRAVE" = "false" ] && [ "$DO_REDSOCKS" = "false" ]; then
+     [ "$DO_BRAVE" = "false" ] && [ "$DO_REDSOCKS" = "false" ] && \
+     [ "$DO_AMNEZIA" = "false" ]; then
     log_warn "Ничего не выбрано. Выход."
     exit 0
   fi
@@ -263,6 +273,11 @@ run_installations() {
     log_step "Установка redsocks"
     run_component_script "${scripts_dir}/setup-redsocks.sh"
   fi
+
+  if [ "$DO_AMNEZIA" = "true" ]; then
+    log_step "Установка AmneziaWG VPN-клиента"
+    run_component_script "${scripts_dir}/install-amnezia.sh"
+  fi
 }
 
 # --- Итоговый отчёт ---
@@ -282,12 +297,15 @@ EOF
   [ "$DO_FIREFOX"  = "true" ] && echo -e "  ${GREEN}✓${NC} Firefox ESR"
   [ "$DO_BRAVE"    = "true" ] && echo -e "  ${GREEN}✓${NC} Brave Browser"
   [ "$DO_REDSOCKS" = "true" ] && echo -e "  ${GREEN}✓${NC} redsocks      (управление: ${INSTALL_DIR}/scripts/proxy-toggle.sh)"
+  [ "$DO_AMNEZIA"  = "true" ] && echo -e "  ${GREEN}✓${NC} AmneziaWG    (конфиг: /etc/amnezia/amneziawg/)"
 
   cat <<EOF
 
 ${BOLD}Полезные команды:${NC}
   ${INSTALL_DIR}/scripts/proxy-toggle.sh set IP PORT USER PASS [LOCAL_PORT] — задать/обновить прокси
   ${INSTALL_DIR}/scripts/proxy-toggle.sh on|off|status                      — включение/выключение/статус
+
+  ${INSTALL_DIR}/scripts/setup-amnezia-connection.sh /path/to/amnezia.conf  — настроить VPN-подключение
 
 Скрипты доступны в: ${INSTALL_DIR}/scripts/
 EOF

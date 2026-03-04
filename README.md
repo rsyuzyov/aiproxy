@@ -4,14 +4,15 @@
 
 ## Что включает
 
-| Компонент          | Описание                                           |
-| ------------------ | -------------------------------------------------- |
-| **cliproxy-api**   | AI-прокси сервер с поддержкой OpenAI/Gemini/Claude |
-| **9router**        | Еще один AI-прокси сервер                          |
-| **xrdp + openbox** | RDP-доступ к рабочему столу                        |
-| **Firefox ESR**    | Браузер (опционально)                              |
-| **Brave Browser**  | Альтернативный браузер (опционально)               |
-| **redsocks**       | Перенаправление TCP-трафика через SOCKS5 прокси    |
+| Компонент          | Описание                                                 |
+| ------------------ | -------------------------------------------------------- |
+| **cliproxy-api**   | AI-прокси сервер с поддержкой OpenAI/Gemini/Claude       |
+| **9router**        | Еще один AI-прокси сервер                                |
+| **xrdp + openbox** | RDP-доступ к рабочему столу                              |
+| **Firefox ESR**    | Браузер (опционально)                                    |
+| **Brave Browser**  | Альтернативный браузер (опционально)                     |
+| **redsocks**       | Перенаправление TCP-трафика через SOCKS5 прокси          |
+| **AmneziaWG**      | Альтернатива прокси для доступа к зарубежным провайдерам |
 
 - Минимальный набор для установки - cliproxy-api.
 - Для работы с claude, openai и другими провайдерами можно установить redsocks и арендовать прокси на https://px6.me (https://proxy6.net)
@@ -73,6 +74,7 @@ PROXY_IP=1.2.3.4 PROXY_PORT=1080 PROXY_LOGIN=user PROXY_PASS=pass \
 | `--firefox`                | Установить Firefox ESR                  |
 | `--brave`                  | Установить Brave Browser                |
 | `--redsocks`               | Настроить redsocks                      |
+| `--amnezia`                | Установить AmneziaWG VPN-клиент         |
 | `-y` / `--non-interactive` | Неинтерактивный режим                   |
 | `--help`                   | Показать справку                        |
 
@@ -129,6 +131,31 @@ bash ~/aiproxy/scripts/setup-redsocks.sh <ip> <port> <login> <password> [local_p
 bash ~/aiproxy/scripts/setup-redsocks.sh 1.2.3.4 1080 myuser mypassword
 ```
 
+### Установка и настройка AmneziaWG VPN
+
+**Шаг 1. Установить AmneziaWG:**
+
+```bash
+sudo bash ~/aiproxy/scripts/install-amnezia.sh
+```
+
+- Устанавливает ядро AmneziaWG (PPA для Ubuntu, `.deb` с GitHub или сборка из исходников)
+- Создаёт каталог конфигураций `/etc/amnezia/amneziawg/`
+- Поддерживает архитектуры `amd64` и `arm64`
+
+**Шаг 2. Подключить конфигурацию:**
+
+```bash
+sudo bash ~/aiproxy/scripts/setup-amnezia-connection.sh /path/to/amnezia.conf
+
+# С явным именем интерфейса (по умолчанию amnezia0):
+sudo bash ~/aiproxy/scripts/setup-amnezia-connection.sh /path/to/amnezia.conf office-vpn
+```
+
+- Принимает `.conf`-файл в формате WireGuard/AmneziaWG (с секцией `[Interface]`)
+- Копирует конфиг в `/etc/amnezia/amneziawg/<имя>.conf`
+- Включает автозапуск и поднимает туннель через `systemd`
+
 ## Управление прокси
 
 После установки redsocks доступны команды (должны запускаться от root):
@@ -159,16 +186,18 @@ update-redsocks.sh 1.2.3.4 1080 newuser newpassword
 
 ```
 aiproxy/
-├── install.sh                    # Мастер-установщик
+├── install.sh                        # Мастер-установщик
 ├── README.md
 └── scripts/
-    ├── install-cliproxy-api.sh   # Установка cliproxy-api
-    ├── install-9router.sh        # Установка 9router
-    ├── install-firefox.sh        # Установка Firefox ESR
-    ├── install-brave.sh          # Установка Brave Browser
-    ├── setup-xrdp.sh             # Настройка RDP + openbox
-    ├── setup-redsocks.sh         # Настройка redsocks
-    └── proxy-toggle.sh           # Управление прокси
+    ├── install-cliproxy-api.sh        # Установка cliproxy-api
+    ├── install-9router.sh             # Установка 9router
+    ├── install-firefox.sh             # Установка Firefox ESR
+    ├── install-brave.sh               # Установка Brave Browser
+    ├── install-amnezia.sh             # Установка AmneziaWG VPN-клиента
+    ├── setup-xrdp.sh                  # Настройка RDP + openbox
+    ├── setup-redsocks.sh              # Настройка redsocks
+    ├── setup-amnezia-connection.sh    # Настройка VPN-подключения Amnezia
+    └── proxy-toggle.sh                # Управление прокси
 ```
 
 ## После установки
@@ -196,7 +225,34 @@ systemctl restart 9router
 
 # xrdp
 systemctl status xrdp
+
+# AmneziaWG VPN (замените amnezia0 на имя вашего интерфейса)
+systemctl start   awg-quick@amnezia0   # включить VPN
+systemctl stop    awg-quick@amnezia0   # выключить VPN
+systemctl status  awg-quick@amnezia0   # статус
+awg show                               # показать активные туннели и трафик
 ```
+
+## Управление AmneziaWG
+
+После установки и первичной настройки (через `setup-amnezia-connection.sh`) туннель управляется через `systemd`:
+
+```bash
+# Включить VPN
+systemctl start awg-quick@amnezia0
+
+# Выключить VPN
+systemctl stop awg-quick@amnezia0
+
+# Включить/выключить автозапуск при загрузке
+systemctl enable  awg-quick@amnezia0
+systemctl disable awg-quick@amnezia0
+
+# Обновить конфиг (при изменении .conf-файла)
+sudo bash ~/aiproxy/scripts/setup-amnezia-connection.sh /path/to/new.conf amnezia0
+```
+
+Конфигурационные файлы хранятся в `/etc/amnezia/amneziawg/`.
 
 ## Требования
 
