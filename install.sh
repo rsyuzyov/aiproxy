@@ -204,34 +204,64 @@ ask_yn() {
 run_installations() {
   local scripts_dir="${INSTALL_DIR}/scripts"
 
+  run_component_script() {
+    local script_path="$1"
+    local script_name
+    script_name="$(basename "${script_path}")"
+
+    local attempt=1
+    local max_attempts=2
+    local rc=0
+
+    while true; do
+      set +e
+      bash "${script_path}"
+      rc=$?
+      set -e
+
+      if [ "${rc}" -eq 0 ]; then
+        return 0
+      fi
+
+      if [ "${rc}" -eq 137 ] && [ "${attempt}" -lt "${max_attempts}" ]; then
+        log_warn "${script_name}: завершился SIGKILL (exit 137), попытка ${attempt}/${max_attempts}; повтор через 5 секунд..."
+        sleep 5
+        attempt=$((attempt + 1))
+        continue
+      fi
+
+      return "${rc}"
+    done
+  }
+
   if [ "$DO_CLIPROXY" = "true" ]; then
     log_step "Установка cliproxy-api"
-    bash "${scripts_dir}/install-cliproxy-api.sh"
+    run_component_script "${scripts_dir}/install-cliproxy-api.sh"
   fi
 
   if [ "$DO_9ROUTER" = "true" ]; then
     log_step "Установка 9router"
-    bash "${scripts_dir}/install-9router.sh"
+    run_component_script "${scripts_dir}/install-9router.sh"
   fi
 
   if [ "$DO_XRDP" = "true" ]; then
     log_step "Настройка xrdp + openbox"
-    bash "${scripts_dir}/setup-xrdp.sh"
+    run_component_script "${scripts_dir}/setup-xrdp.sh"
   fi
 
   if [ "$DO_FIREFOX" = "true" ]; then
     log_step "Установка Firefox ESR"
-    bash "${scripts_dir}/install-firefox.sh"
+    run_component_script "${scripts_dir}/install-firefox.sh"
   fi
 
   if [ "$DO_BRAVE" = "true" ]; then
     log_step "Установка Brave Browser"
-    bash "${scripts_dir}/install-brave.sh"
+    run_component_script "${scripts_dir}/install-brave.sh"
   fi
 
   if [ "$DO_REDSOCKS" = "true" ]; then
     log_step "Установка redsocks"
-    bash "${scripts_dir}/setup-redsocks.sh"
+    run_component_script "${scripts_dir}/setup-redsocks.sh"
   fi
 }
 
