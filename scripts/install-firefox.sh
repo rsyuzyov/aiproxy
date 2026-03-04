@@ -25,13 +25,27 @@ install_firefox() {
   log_info "Обновляю пакетный менеджер..."
   apt-get update -qq
 
-  # Firefox ESR доступен в официальных репозиториях Debian
-  if dpkg -l firefox-esr &>/dev/null 2>&1; then
-    log_info "Firefox ESR уже установлен, обновляю..."
+  # Firefox ESR доступен в официальных репозиториях Debian.
+  # Используем dpkg-query со статусом ii (installed), потому что
+  # `dpkg -l firefox-esr` возвращает 0 даже при статусе 'un' (unpack/not-installed),
+  # что приводило к ложному срабатыванию ветки --only-upgrade.
+  local pkg_status
+  pkg_status="$(dpkg-query -W -f='${Status}' firefox-esr 2>/dev/null || true)"
+
+  if [ "${pkg_status}" = "install ok installed" ]; then
+    log_info "Firefox ESR уже установлен, обновляю до актуальной версии..."
     apt-get install -y -qq --only-upgrade firefox-esr
   else
-    log_info "Устанавливаю Firefox ESR..."
+    log_info "Firefox ESR не установлен (статус: '${pkg_status:-отсутствует}'), выполняю установку..."
     apt-get install -y -qq firefox-esr
+  fi
+
+  # --- Self-check: убеждаемся, что пакет действительно установлен ---
+  local final_status
+  final_status="$(dpkg-query -W -f='${Status}' firefox-esr 2>/dev/null || true)"
+  if [ "${final_status}" != "install ok installed" ]; then
+    log_error "Firefox ESR не установлен после попытки установки (статус: '${final_status}')"
+    exit 1
   fi
 
   local ver
