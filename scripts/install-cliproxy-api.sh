@@ -21,9 +21,10 @@ SERVICE_NAME="cliproxy-api"
 GITHUB_REPO="router-for-me/CLIProxyAPI"
 GITHUB_API="https://api.github.com/repos/${GITHUB_REPO}/releases/latest"
 
-# Скрипт обновления (selfupdate)
-SELFUPDATE_BIN="/usr/local/bin/cliproxy-api-selfupdate"
-ROLLBACK_BIN="/usr/local/bin/cliproxy-api-rollback"
+# Вспомогательные скрипты храним в репозитории
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SELFUPDATE_BIN="${SCRIPT_DIR}/cliproxy-api-selfupdate.sh"
+ROLLBACK_BIN="${SCRIPT_DIR}/cliproxy-api-rollback.sh"
 
 require_root() {
   if [ "${EUID}" -ne 0 ]; then

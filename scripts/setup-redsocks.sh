@@ -49,18 +49,13 @@ install_redsocks() {
   log_success "redsocks установлен"
 }
 
-install_proxy_toggle() {
-  log_info "Устанавливаю скрипт proxy-toggle.sh в /usr/local/bin/..."
+ensure_local_scripts_executable() {
+  log_info "Проверяю локальные скрипты в каталоге репозитория..."
 
-  # Установить proxy-toggle.sh глобально
-  cp "${PROXY_TOGGLE}" /usr/local/bin/proxy-toggle.sh
-  chmod +x /usr/local/bin/proxy-toggle.sh
+  chmod +x "${PROXY_TOGGLE}"
+  chmod +x "${SCRIPTS_DIR}/setup-redsocks.sh"
 
-  # Также установить update-redsocks.sh
-  cp "${SCRIPTS_DIR}/setup-redsocks.sh" /usr/local/bin/update-redsocks.sh
-  chmod +x /usr/local/bin/update-redsocks.sh
-
-  log_success "Скрипты установлены в /usr/local/bin/"
+  log_success "Локальные скрипты готовы к запуску из ${SCRIPTS_DIR}"
 }
 
 validate_args() {
@@ -171,8 +166,8 @@ prepare_redsocks_service() {
 }
 
 set_initial_bypass_mode() {
-  log_info "Применяю начальный режим прокси: OFF (как proxy-toggle.sh off)..."
-  /usr/local/bin/proxy-toggle.sh off
+  log_info "Применяю начальный режим прокси: OFF (как ${PROXY_TOGGLE} off)..."
+  "${PROXY_TOGGLE}" off
 }
 
 show_usage() {
@@ -190,8 +185,8 @@ show_usage() {
   $0 1.2.3.4 1080 myuser mypassword
   $0 1.2.3.4 1080 myuser mypassword 12345
 
-После настройки управляйте прокси через proxy-toggle.sh:
-  proxy-toggle.sh on|off|status
+После настройки управляйте прокси через локальный скрипт:
+  ${PROXY_TOGGLE} on|off|status
 EOF
 }
 
@@ -215,7 +210,7 @@ main() {
   validate_args "${PROXY_IP}" "${PROXY_PORT}" "${LOCAL_PORT}"
 
   install_redsocks
-  install_proxy_toggle
+  ensure_local_scripts_executable
   write_redsocks_conf "${PROXY_IP}" "${PROXY_PORT}" "${PROXY_LOGIN}" "${PROXY_PASSWORD}" "${LOCAL_PORT}"
   prepare_redsocks_service
   setup_iptables "${PROXY_IP}" "${LOCAL_PORT}"
@@ -224,12 +219,12 @@ main() {
   echo ""
   log_success "redsocks настроен: ${PROXY_IP}:${PROXY_PORT}"
   log_info "Управление прокси:"
-  log_info "  proxy-toggle.sh on     — включить"
-  log_info "  proxy-toggle.sh off    — выключить"
-  log_info "  proxy-toggle.sh status — статус"
+  log_info "  ${PROXY_TOGGLE} on     — включить"
+  log_info "  ${PROXY_TOGGLE} off    — выключить"
+  log_info "  ${PROXY_TOGGLE} status — статус"
   log_info ""
   log_info "Обновить настройки прокси:"
-  log_info "  update-redsocks.sh <ip> <port> <login> <pass>"
+  log_info "  ${SCRIPTS_DIR}/setup-redsocks.sh <ip> <port> <login> <pass>"
 }
 
 main "$@"

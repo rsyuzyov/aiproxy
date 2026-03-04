@@ -280,13 +280,13 @@ EOF
   [ "$DO_XRDP"     = "true" ] && echo -e "  ${GREEN}✓${NC} xrdp          (RDP порт 3389)"
   [ "$DO_FIREFOX"  = "true" ] && echo -e "  ${GREEN}✓${NC} Firefox ESR"
   [ "$DO_BRAVE"    = "true" ] && echo -e "  ${GREEN}✓${NC} Brave Browser"
-  [ "$DO_REDSOCKS" = "true" ] && echo -e "  ${GREEN}✓${NC} redsocks      (управление: proxy-toggle.sh)"
+  [ "$DO_REDSOCKS" = "true" ] && echo -e "  ${GREEN}✓${NC} redsocks      (управление: ${INSTALL_DIR}/scripts/proxy-toggle.sh)"
 
   cat <<EOF
 
 ${BOLD}Полезные команды:${NC}
-  proxy-toggle.sh on|off|status    — включение/выключение прокси
-  update-redsocks.sh IP PORT USER PASS — обновление настроек прокси
+  ${INSTALL_DIR}/scripts/proxy-toggle.sh on|off|status    — включение/выключение прокси
+  ${INSTALL_DIR}/scripts/setup-redsocks.sh IP PORT USER PASS — обновление настроек прокси
 
 Скрипты доступны в: ${INSTALL_DIR}/scripts/
 EOF
