@@ -2,10 +2,11 @@
 
 - Подключись по ssh к hv1, там есть контейенр 131
 - Откати контейнер (pct stop 131 ; zfs rollback -R pool2/subvol-131-disk-0@s202060303_145100 && pct start 131)
-- В контейнере запусти установку строго однострочником из README.md (wget -qO- https://raw.githubusercontent.com/rsyuzyov/aiproxy/main/install.sh | bash -s -- --all -y)
+- В контейнере запусти установку строго однострочником из README.md
 
 Ожидаемый результат:
 
+- Срипт должен завершиться без ошибок (если ошибки, то проверять остальное не требуется)
 - Служба cliproxy-api работает
 - Служба 9router работает
 - firefox установлен
