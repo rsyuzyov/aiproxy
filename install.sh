@@ -200,34 +200,6 @@ ask_yn() {
   esac
 }
 
-# --- Запрос параметров redsocks ---
-ask_redsocks_params() {
-  if [ "$DO_REDSOCKS" = "true" ]; then
-    echo ""
-    log_step "Параметры SOCKS5-прокси для redsocks"
-
-    printf "  IP-адрес прокси: "
-    read -r PROXY_IP
-
-    printf "  Порт прокси [1080]: "
-    read -r PROXY_PORT
-    PROXY_PORT="${PROXY_PORT:-1080}"
-
-    printf "  Логин: "
-    read -r PROXY_LOGIN
-
-    printf "  Пароль: "
-    read -rs PROXY_PASS
-    echo ""
-
-    printf "  Локальный порт redsocks [12345]: "
-    read -r LOCAL_PORT
-    LOCAL_PORT="${LOCAL_PORT:-12345}"
-
-    export PROXY_IP PROXY_PORT PROXY_LOGIN PROXY_PASS LOCAL_PORT
-  fi
-}
-
 # --- Запуск нужных скриптов ---
 run_installations() {
   local scripts_dir="${INSTALL_DIR}/scripts"
@@ -258,9 +230,8 @@ run_installations() {
   fi
 
   if [ "$DO_REDSOCKS" = "true" ]; then
-    log_step "Настройка redsocks"
-    bash "${scripts_dir}/setup-redsocks.sh" \
-      "${PROXY_IP}" "${PROXY_PORT}" "${PROXY_LOGIN}" "${PROXY_PASS}" "${LOCAL_PORT}"
+    log_step "Установка redsocks"
+    bash "${scripts_dir}/setup-redsocks.sh"
   fi
 }
 
@@ -285,8 +256,8 @@ EOF
   cat <<EOF
 
 ${BOLD}Полезные команды:${NC}
-  ${INSTALL_DIR}/scripts/proxy-toggle.sh on|off|status    — включение/выключение прокси
-  ${INSTALL_DIR}/scripts/setup-redsocks.sh IP PORT USER PASS — обновление настроек прокси
+  ${INSTALL_DIR}/scripts/proxy-toggle.sh set IP PORT USER PASS [LOCAL_PORT] — задать/обновить прокси
+  ${INSTALL_DIR}/scripts/proxy-toggle.sh on|off|status                      — включение/выключение/статус
 
 Скрипты доступны в: ${INSTALL_DIR}/scripts/
 EOF
@@ -315,23 +286,6 @@ main() {
 
   if [ "$NON_INTERACTIVE" = "false" ]; then
     interactive_menu
-    ask_redsocks_params
-  else
-    # В неинтерактивном режиме redsocks параметры берём из env или скипаем
-    if [ "$DO_REDSOCKS" = "true" ]; then
-      PROXY_IP="${PROXY_IP:-}"
-      PROXY_PORT="${PROXY_PORT:-1080}"
-      PROXY_LOGIN="${PROXY_LOGIN:-}"
-      PROXY_PASS="${PROXY_PASS:-}"
-      LOCAL_PORT="${LOCAL_PORT:-12345}"
-
-      if [ -z "$PROXY_IP" ] || [ -z "$PROXY_LOGIN" ]; then
-        log_error "Для --redsocks в неинтерактивном режиме нужно задать переменные:"
-        log_error "  PROXY_IP, PROXY_PORT, PROXY_LOGIN, PROXY_PASS"
-        log_error "Пример: PROXY_IP=1.2.3.4 PROXY_PORT=1080 PROXY_LOGIN=user PROXY_PASS=pass bash install.sh --redsocks -y"
-        exit 1
-      fi
-    fi
   fi
 
   run_installations
