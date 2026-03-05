@@ -237,6 +237,9 @@ configure_openbox_autostart() {
 # Фон рабочего стола (без него — чёрный экран)
 xsetroot -solid "#2e3440" &
 
+# Переключение раскладки: Alt+Shift (us/ru)
+setxkbmap -layout us,ru -option grp:alt_shift_toggle &
+
 # Панель задач (конфиг: /etc/xdg/tint2/tint2rc)
 tint2 &
 EOF
