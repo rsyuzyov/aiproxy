@@ -1,11 +1,16 @@
 #!/usr/bin/env bash
 # =============================================================================
-# Настройка xrdp + openbox для RDP-доступа
+# Настройка xrdp + openbox + tint2 для RDP-доступа
 # Особенности:
 #  - Всегда английская раскладка (US) при входе
-#  - Используется openbox-session через dbus-launch
+#  - openbox-session через dbus-launch
+#  - Вертикальная панель tint2 слева (конфиг: configs/tint2rc)
+#  - Контекстное меню openbox по ПКМ на рабочем столе
 # =============================================================================
 set -euo pipefail
+
+REPO_RAW="https://raw.githubusercontent.com/rsyuzyov/aiproxy/master"
+INSTALL_DIR="${HOME}/aiproxy"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -60,7 +65,6 @@ export XDG_RUNTIME_DIR=${XDG_RUNTIME_DIR:-/run/user/$(id -u)}
 [ -d "$XDG_RUNTIME_DIR" ] || { mkdir -p "$XDG_RUNTIME_DIR"; chmod 700 "$XDG_RUNTIME_DIR"; }
 
 # DISPLAY задаётся xrdp/sesman через env; fallback на :10
-# (нужно для корректного запуска openbox-session)
 export DISPLAY=${DISPLAY:-:10}
 
 export DESKTOP_SESSION=openbox
@@ -94,21 +98,15 @@ EOF
   # Принудительно установить US раскладку в xrdp.ini (override)
   local xrdp_ini="/etc/xrdp/xrdp.ini"
   if [ -f "${xrdp_ini}" ]; then
-    # Резервная копия
     cp "${xrdp_ini}" "${xrdp_ini}.bak_kbd" 2>/dev/null || true
 
-    # Удалить старые override-настройки если есть
     sed -i '/^xrdp\.override_keyboard_type=/d' "${xrdp_ini}"
     sed -i '/^xrdp\.override_keyboard_subtype=/d' "${xrdp_ini}"
     sed -i '/^xrdp\.override_keylayout=/d' "${xrdp_ini}"
 
-    # Добавить override в секцию [Xorg] или в конец файла
-    # 0x00000409 = US English
     if grep -q '^\[Xorg\]' "${xrdp_ini}"; then
-      # Добавить после [Xorg]
       sed -i '/^\[Xorg\]/a xrdp.override_keyboard_type=0x04\nxrdp.override_keyboard_subtype=0x01\nxrdp.override_keylayout=0x00000409' "${xrdp_ini}"
     else
-      # Добавить в конец файла
       cat >> "${xrdp_ini}" <<'EOF'
 
 ; Force English (US) keyboard layout for all RDP sessions
@@ -127,7 +125,6 @@ configure_xrdp_ini() {
 
   local xrdp_ini="/etc/xrdp/xrdp.ini"
 
-  # Настроить безопасность и производительность
   if grep -q '^crypt_level=' "${xrdp_ini}"; then
     sed -i 's/^crypt_level=.*/crypt_level=high/' "${xrdp_ini}"
   fi
@@ -136,7 +133,6 @@ configure_xrdp_ini() {
     sed -i 's/^security_layer=.*/security_layer=negotiate/' "${xrdp_ini}"
   fi
 
-  # tcp keepalive
   if grep -q '^tcp_keepalive=' "${xrdp_ini}"; then
     sed -i 's/^tcp_keepalive=.*/tcp_keepalive=true/' "${xrdp_ini}"
   fi
@@ -145,7 +141,6 @@ configure_xrdp_ini() {
 }
 
 add_xrdp_to_ssl_group() {
-  # xrdp нужен доступ к SSL сертификатам
   if id xrdp &>/dev/null && getent group ssl-cert &>/dev/null; then
     usermod -aG ssl-cert xrdp 2>/dev/null || true
     log_info "Пользователь xrdp добавлен в группу ssl-cert"
@@ -168,26 +163,85 @@ enable_and_start() {
   fi
 }
 
+configure_tint2() {
+  log_info "Настраиваю tint2 (конфиг из репозитория)..."
+
+  local cfg_dir="/etc/xdg/tint2"
+  mkdir -p "${cfg_dir}"
+
+  # Скачать конфиг из репозитория
+  if command -v curl &>/dev/null; then
+    curl -fsSL "${REPO_RAW}/configs/tint2rc" -o "${cfg_dir}/tint2rc" 2>/dev/null && \
+      log_success "tint2rc загружен из репозитория" || true
+  elif command -v wget &>/dev/null; then
+    wget -qO "${cfg_dir}/tint2rc" "${REPO_RAW}/configs/tint2rc" 2>/dev/null && \
+      log_success "tint2rc загружен из репозитория" || true
+  fi
+
+  # Fallback — из локального репозитория
+  if [ ! -s "${cfg_dir}/tint2rc" ] && [ -f "${INSTALL_DIR}/configs/tint2rc" ]; then
+    cp "${INSTALL_DIR}/configs/tint2rc" "${cfg_dir}/tint2rc"
+    log_success "tint2rc скопирован из локального репозитория"
+  fi
+
+  if [ -s "${cfg_dir}/tint2rc" ]; then
+    log_success "tint2 настроен: ${cfg_dir}/tint2rc"
+  else
+    log_warn "Не удалось установить конфиг tint2, будет использован дефолтный"
+  fi
+}
+
+configure_openbox_menu() {
+  log_info "Настраиваю меню openbox (ПКМ на рабочем столе)..."
+
+  local ob_dir="/etc/xdg/openbox"
+  mkdir -p "${ob_dir}"
+
+  cat > "${ob_dir}/menu.xml" <<'EOF'
+<?xml version="1.0" encoding="UTF-8"?>
+<openbox_menu xmlns="http://openbox.org/3.4/menu">
+
+  <menu id="root-menu" label="Меню">
+    <item label="Терминал">
+      <action name="Execute"><command>xterm</command></action>
+    </item>
+    <item label="Firefox">
+      <action name="Execute"><command>firefox-esr</command></action>
+    </item>
+    <separator/>
+    <menu id="sys-menu" label="Система">
+      <item label="Перезапустить openbox">
+        <action name="Reconfigure"/>
+      </item>
+      <item label="Завершить сессию">
+        <action name="Exit"><prompt>no</prompt></action>
+      </item>
+    </menu>
+  </menu>
+
+</openbox_menu>
+EOF
+
+  log_success "menu.xml настроен"
+}
+
 configure_openbox_autostart() {
   log_info "Настраиваю автозапуск Openbox..."
 
   local autostart_dir="/etc/xdg/openbox"
   mkdir -p "${autostart_dir}"
 
-  # Всегда перезаписываем autostart с нужными компонентами
   cat > "${autostart_dir}/autostart" <<'EOF'
-#
 # Openbox autostart — запускается при старте RDP-сессии
-#
 
 # Фон рабочего стола (без него — чёрный экран)
 xsetroot -solid "#2e3440" &
 
-# Панель задач
+# Панель задач (конфиг: /etc/xdg/tint2/tint2rc)
 tint2 &
 EOF
 
-  log_success "Openbox autostart настроен (xsetroot + tint2)"
+  log_success "Openbox autostart настроен"
 }
 
 # =============================================================================
@@ -200,6 +254,8 @@ main() {
   configure_startwm
   configure_keyboard_en
   configure_xrdp_ini
+  configure_tint2
+  configure_openbox_menu
   configure_openbox_autostart
   add_xrdp_to_ssl_group
   enable_and_start
