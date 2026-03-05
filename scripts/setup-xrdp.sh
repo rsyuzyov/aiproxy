@@ -52,11 +52,19 @@ configure_startwm() {
 
   cat > "/etc/xrdp/startwm.sh" <<'EOF'
 #!/bin/sh
-# Minimal stable XRDP session for container
+# XRDP session startup script
+
+# XDG runtime dir
 export XDG_RUNTIME_DIR=${XDG_RUNTIME_DIR:-/run/user/$(id -u)}
-[ -d $XDG_RUNTIME_DIR ] || { mkdir -p $XDG_RUNTIME_DIR; chmod 700 $XDG_RUNTIME_DIR; }
+[ -d "$XDG_RUNTIME_DIR" ] || { mkdir -p "$XDG_RUNTIME_DIR"; chmod 700 "$XDG_RUNTIME_DIR"; }
+
+# DISPLAY задаётся xrdp/sesman через env; fallback на :10
+# (нужно для корректного запуска openbox-session)
+export DISPLAY=${DISPLAY:-:10}
+
 export DESKTOP_SESSION=openbox
 export XDG_CURRENT_DESKTOP=Openbox
+
 exec dbus-launch --exit-with-session openbox-session
 EOF
 
