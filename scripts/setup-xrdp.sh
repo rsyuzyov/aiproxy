@@ -225,6 +225,21 @@ EOF
   log_success "menu.xml настроен"
 }
 
+configure_xresources() {
+  log_info "Настраиваю ~/.Xresources (xterm: ПКМ = вставить из буфера)..."
+
+  cat > /root/.Xresources << 'EOF'
+! XTerm — правая кнопка вставляет из буфера обмена
+XTerm*selectToClipboard: true
+XTerm*VT100.Translations: #override \
+  <Btn3Down>: insert-selection(CLIPBOARD,PRIMARY) \n \
+  Ctrl <Key>V: insert-selection(CLIPBOARD) \n \
+  Shift <Key>Insert: insert-selection(CLIPBOARD,PRIMARY)
+EOF
+
+  log_success "~/.Xresources настроен"
+}
+
 configure_openbox_autostart() {
   log_info "Настраиваю автозапуск Openbox..."
 
@@ -239,6 +254,9 @@ xsetroot -solid "#2e3440" &
 
 # Переключение раскладки: Alt+Shift (us/ru)
 setxkbmap -layout us,ru -option grp:alt_shift_toggle &
+
+# X ресурсы (xterm: ПКМ = вставить из буфера)
+[ -f ~/.Xresources ] && xrdb -merge ~/.Xresources &
 
 # Панель задач (конфиг: /etc/xdg/tint2/tint2rc)
 tint2 &
@@ -259,6 +277,7 @@ main() {
   configure_xrdp_ini
   configure_tint2
   configure_openbox_menu
+  configure_xresources
   configure_openbox_autostart
   add_xrdp_to_ssl_group
   enable_and_start
