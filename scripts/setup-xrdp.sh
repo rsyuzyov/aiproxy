@@ -28,11 +28,12 @@ install_packages() {
   log_info "Обновляю пакетный менеджер..."
   apt-get update -qq
 
-  log_info "Устанавливаю xrdp, openbox, dbus-x11..."
+  log_info "Устанавливаю xrdp, openbox, tint2, dbus-x11..."
   apt-get install -y -qq \
     xrdp \
     xorgxrdp \
     openbox \
+    tint2 \
     dbus-x11 \
     x11-xserver-utils \
     x11-utils \
@@ -173,18 +174,20 @@ configure_openbox_autostart() {
   local autostart_dir="/etc/xdg/openbox"
   mkdir -p "${autostart_dir}"
 
-  # Создать autostart если не существует или пустой
-  if [ ! -f "${autostart_dir}/autostart" ] || [ ! -s "${autostart_dir}/autostart" ]; then
-    cat > "${autostart_dir}/autostart" <<'EOF'
+  # Всегда перезаписываем autostart с нужными компонентами
+  cat > "${autostart_dir}/autostart" <<'EOF'
 #
-# Openbox autostart
-# Эти программы запускаются при старте Openbox-сессии.
+# Openbox autostart — запускается при старте RDP-сессии
 #
-EOF
-    log_info "Создан файл autostart"
-  fi
 
-  log_success "Openbox настроен"
+# Фон рабочего стола (без него — чёрный экран)
+xsetroot -solid "#2e3440" &
+
+# Панель задач
+tint2 &
+EOF
+
+  log_success "Openbox autostart настроен (xsetroot + tint2)"
 }
 
 # =============================================================================
