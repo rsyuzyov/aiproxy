@@ -1,0 +1,8 @@
+[Unit]
+Description=Update cliproxy-api to latest GitHub release
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=__CLIPROXY_UPDATE_BIN__

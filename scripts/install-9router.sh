@@ -16,6 +16,7 @@ log_success() { echo -e "${GREEN}[9router] OK:${NC} $*"; }
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SYSTEMD_TEMPLATE="${SCRIPT_DIR}/../configs/systemd/9router.service"
+SYSTEMD_DIR="${SCRIPT_DIR}/../configs/systemd"
 SERVICE_NAME="9router"
 NODE_VERSION="20"  # LTS версия Node.js
 
@@ -84,6 +85,33 @@ install_systemd_unit() {
   log_success "Systemd unit установлен и включён"
 }
 
+install_updater_timer() {
+  log_info "Устанавливаю таймер автообновления..."
+
+  local update_bin="${SCRIPT_DIR}/9router-update.sh"
+  local selfupdate_bin="${SCRIPT_DIR}/9router-selfupdate.sh"
+  local updater_svc="${SYSTEMD_DIR}/9router-updater.service"
+  local updater_tmr="${SYSTEMD_DIR}/9router-updater.timer"
+
+  if [ ! -f "${updater_svc}" ] || [ ! -f "${updater_tmr}" ]; then
+    log_warn "Шаблоны таймера не найдены в ${SYSTEMD_DIR}, пропускаю"
+    return
+  fi
+
+  chmod +x "${update_bin}" "${selfupdate_bin}" 2>/dev/null || true
+
+  sed -e "s|__9ROUTER_UPDATE_BIN__|${update_bin}|g" \
+    "${updater_svc}" > "/etc/systemd/system/9router-updater.service"
+
+  cp "${updater_tmr}" "/etc/systemd/system/9router-updater.timer"
+
+  systemctl daemon-reload
+  systemctl enable --now "9router-updater.timer"
+  log_success "Таймер обновления установлен (ежедневно в 05:00)"
+  log_info "Следующий запуск: $(systemctl show -P NextElapseUSecRealtime 9router-updater.timer 2>/dev/null || echo 'см. systemctl list-timers')"
+}
+
+
 # =============================================================================
 # MAIN
 # =============================================================================
@@ -93,6 +121,7 @@ main() {
   install_nodejs
   install_9router
   install_systemd_unit
+  install_updater_timer
 
   # Запустить службу
   systemctl start "${SERVICE_NAME}.service"

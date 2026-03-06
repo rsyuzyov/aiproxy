@@ -308,7 +308,12 @@ ${BOLD}Полезные команды:${NC}
   ${INSTALL_DIR}/scripts/setup-amnezia-connection.sh /path/to/amnezia.conf  — настроить VPN-подключение
 
 Скрипты доступны в: ${INSTALL_DIR}/scripts/
+
+${BOLD}Автообновление (ежедневно в 05:00):${NC}
 EOF
+  [ "$DO_CLIPROXY" = "true" ] && echo -e "  ${GREEN}✓${NC} cliproxy-api-updater.timer  (journalctl -u cliproxy-api-updater.service)"
+  [ "$DO_9ROUTER"  = "true" ] && echo -e "  ${GREEN}✓${NC} 9router-updater.timer       (journalctl -u 9router-updater.service)"
+  echo -e "\n  Расписание: ${CYAN}systemctl list-timers --all | grep updater${NC}"
 }
 
 # =============================================================================

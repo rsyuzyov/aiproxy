@@ -1,0 +1,10 @@
+[Unit]
+Description=Daily update for 9router at 05:00
+
+[Timer]
+OnCalendar=*-*-* 05:00:00
+RandomizedDelaySec=60
+Persistent=true
+
+[Install]
+WantedBy=timers.target

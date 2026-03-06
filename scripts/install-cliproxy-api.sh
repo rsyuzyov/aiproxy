@@ -264,9 +264,8 @@ install_systemd_units() {
 
   mkdir -p "/etc/systemd/system/${SERVICE_NAME}.service.d"
 
-  sed \
-    -e "s|__SELFUPDATE_BIN__|${SELFUPDATE_BIN}|g" \
-    "${selfupdate_template}" > "/etc/systemd/system/${SERVICE_NAME}.service.d/10-selfupdate.conf"
+  # 10-selfupdate.conf содержит только комментарий (selfupdate перенесён в таймер)
+  cp "${selfupdate_template}" "/etc/systemd/system/${SERVICE_NAME}.service.d/10-selfupdate.conf"
 
   cp "${onfailure_template}" "/etc/systemd/system/${SERVICE_NAME}.service.d/20-rollback.conf"
 
@@ -277,6 +276,31 @@ install_systemd_units() {
   systemctl daemon-reload
   systemctl enable "${SERVICE_NAME}.service"
   log_success "Systemd units установлены и включены"
+}
+
+install_updater_timer() {
+  log_info "Устанавливаю таймер автообновления..."
+
+  local update_bin="${SCRIPT_DIR}/cliproxy-api-update.sh"
+  local updater_svc="${SYSTEMD_DIR}/cliproxy-api-updater.service"
+  local updater_tmr="${SYSTEMD_DIR}/cliproxy-api-updater.timer"
+
+  if [ ! -f "${updater_svc}" ] || [ ! -f "${updater_tmr}" ]; then
+    log_warn "Шаблоны таймера не найдены в ${SYSTEMD_DIR}, пропускаю"
+    return
+  fi
+
+  chmod +x "${update_bin}" 2>/dev/null || true
+
+  sed -e "s|__CLIPROXY_UPDATE_BIN__|${update_bin}|g" \
+    "${updater_svc}" > "/etc/systemd/system/cliproxy-api-updater.service"
+
+  cp "${updater_tmr}" "/etc/systemd/system/cliproxy-api-updater.timer"
+
+  systemctl daemon-reload
+  systemctl enable --now "cliproxy-api-updater.timer"
+  log_success "Таймер обновления установлен (ежедневно в 05:00)"
+  log_info "Следующий запуск: $(systemctl show -P NextElapseUSecRealtime cliproxy-api-updater.timer 2>/dev/null || echo 'см. systemctl list-timers')"
 }
 
 create_default_config() {
@@ -375,6 +399,9 @@ main() {
 
   # Установить systemd units
   install_systemd_units
+
+  # Установить таймер автообновления
+  install_updater_timer
 
   # Запустить службу
   systemctl start "${SERVICE_NAME}.service"

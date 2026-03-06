@@ -1,0 +1,8 @@
+[Unit]
+Description=Update 9router npm package to latest version
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=__9ROUTER_UPDATE_BIN__
