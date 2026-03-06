@@ -1,0 +1,14 @@
+[Unit]
+Description=CLI Proxy API Service
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=__WORKDIR__
+ExecStart=__BIN_PATH__
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

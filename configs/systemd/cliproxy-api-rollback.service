@@ -1,0 +1,8 @@
+[Unit]
+Description=Rollback cliproxy-api after failed update
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=__ROLLBACK_BIN__

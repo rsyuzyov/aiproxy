@@ -14,6 +14,8 @@ log_warn()    { echo -e "${YELLOW}[9router]${NC} $*"; }
 log_error()   { echo -e "${RED}[9router]${NC} $*" >&2; }
 log_success() { echo -e "${GREEN}[9router] OK:${NC} $*"; }
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SYSTEMD_TEMPLATE="${SCRIPT_DIR}/../configs/systemd/9router.service"
 SERVICE_NAME="9router"
 NODE_VERSION="20"  # LTS версия Node.js
 
@@ -67,25 +69,15 @@ install_9router() {
 install_systemd_unit() {
   log_info "Устанавливаю systemd unit..."
 
+  if [ ! -f "${SYSTEMD_TEMPLATE}" ]; then
+    log_error "Не найден шаблон unit-файла: ${SYSTEMD_TEMPLATE}"
+    exit 1
+  fi
+
   local bin_path
   bin_path="$(which 9router 2>/dev/null || echo '/usr/bin/9router')"
 
-  cat > "/etc/systemd/system/${SERVICE_NAME}.service" <<EOF
-[Unit]
-Description=9Router Service
-After=network-online.target
-Wants=network-online.target
-
-[Service]
-Type=simple
-ExecStart=${bin_path} --host 0.0.0.0 --port 20128 --no-browser
-Restart=always
-RestartSec=5
-Environment=NODE_ENV=production
-
-[Install]
-WantedBy=multi-user.target
-EOF
+  sed "s|__BIN_PATH__|${bin_path}|g" "${SYSTEMD_TEMPLATE}" > "/etc/systemd/system/${SERVICE_NAME}.service"
 
   systemctl daemon-reload
   systemctl enable "${SERVICE_NAME}.service"

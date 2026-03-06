@@ -23,6 +23,7 @@ GITHUB_API="https://api.github.com/repos/${GITHUB_REPO}/releases/latest"
 
 # Вспомогательные скрипты храним в репозитории
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SYSTEMD_DIR="${SCRIPT_DIR}/../configs/systemd"
 SELFUPDATE_BIN="${SCRIPT_DIR}/cliproxy-api-selfupdate.sh"
 ROLLBACK_BIN="${SCRIPT_DIR}/cliproxy-api-rollback.sh"
 
@@ -244,50 +245,34 @@ SCRIPT
 install_systemd_units() {
   log_info "Устанавливаю systemd units..."
 
-  # Основной unit
-  cat > "/etc/systemd/system/${SERVICE_NAME}.service" <<EOF
-[Unit]
-Description=CLI Proxy API Service
-After=network.target
+  local main_template="${SYSTEMD_DIR}/${SERVICE_NAME}.service"
+  local rollback_template="${SYSTEMD_DIR}/${SERVICE_NAME}-rollback.service"
+  local selfupdate_template="${SYSTEMD_DIR}/${SERVICE_NAME}.service.d/10-selfupdate.conf"
+  local onfailure_template="${SYSTEMD_DIR}/${SERVICE_NAME}.service.d/20-rollback.conf"
 
-[Service]
-Type=simple
-User=root
-WorkingDirectory=${WORKDIR}
-ExecStart=${BIN}
-Restart=always
-RestartSec=5
+  for template in "${main_template}" "${rollback_template}" "${selfupdate_template}" "${onfailure_template}"; do
+    if [ ! -f "${template}" ]; then
+      log_error "Не найден шаблон systemd-файла: ${template}"
+      exit 1
+    fi
+  done
 
-[Install]
-WantedBy=multi-user.target
-EOF
+  sed \
+    -e "s|__WORKDIR__|${WORKDIR}|g" \
+    -e "s|__BIN_PATH__|${BIN}|g" \
+    "${main_template}" > "/etc/systemd/system/${SERVICE_NAME}.service"
 
-  # Drop-in для selfupdate
   mkdir -p "/etc/systemd/system/${SERVICE_NAME}.service.d"
-  cat > "/etc/systemd/system/${SERVICE_NAME}.service.d/10-selfupdate.conf" <<EOF
-[Service]
-ExecStartPre=-${SELFUPDATE_BIN}
-EOF
 
-  # Drop-in для rollback (OnFailure)
-  cat > "/etc/systemd/system/${SERVICE_NAME}.service.d/20-rollback.conf" <<EOF
-[Unit]
-OnFailure=${SERVICE_NAME}-rollback.service
-StartLimitIntervalSec=300
-StartLimitBurst=3
-EOF
+  sed \
+    -e "s|__SELFUPDATE_BIN__|${SELFUPDATE_BIN}|g" \
+    "${selfupdate_template}" > "/etc/systemd/system/${SERVICE_NAME}.service.d/10-selfupdate.conf"
 
-  # Rollback service
-  cat > "/etc/systemd/system/${SERVICE_NAME}-rollback.service" <<EOF
-[Unit]
-Description=Rollback cliproxy-api after failed update
-After=network-online.target
-Wants=network-online.target
+  cp "${onfailure_template}" "/etc/systemd/system/${SERVICE_NAME}.service.d/20-rollback.conf"
 
-[Service]
-Type=oneshot
-ExecStart=${ROLLBACK_BIN}
-EOF
+  sed \
+    -e "s|__ROLLBACK_BIN__|${ROLLBACK_BIN}|g" \
+    "${rollback_template}" > "/etc/systemd/system/${SERVICE_NAME}-rollback.service"
 
   systemctl daemon-reload
   systemctl enable "${SERVICE_NAME}.service"
