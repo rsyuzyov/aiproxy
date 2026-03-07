@@ -251,8 +251,10 @@ configure_openbox_autostart() {
 # Фон рабочего стола (без него — чёрный экран)
 xsetroot -solid "#2e3440" &
 
-# Переключение раскладки: Alt+Shift (us/ru)
-setxkbmap -layout us,ru -option grp:alt_shift_toggle &
+# Переключение раскладки Alt+Shift (us/ru).
+# sleep 2 нужен: xrdpkeyb-драйвер переинициализирует раскладку
+# после установки RDP-соединения и перезаписывает setxkbmap без задержки.
+(sleep 2 && setxkbmap -layout us,ru -option grp:alt_shift_toggle) &
 
 # X ресурсы (xterm: ПКМ = вставить из буфера)
 [ -f ~/.Xresources ] && xrdb -merge ~/.Xresources &
@@ -262,6 +264,24 @@ tint2 &
 EOF
 
   log_success "Openbox autostart настроен"
+}
+
+configure_xorg_keyboard() {
+  log_info "Настраиваю XKB-раскладки в xorg.conf.d (us,ru / Alt+Shift)..."
+
+  local xconf_dir="/etc/X11/xrdp/xorg.conf.d"
+  mkdir -p "${xconf_dir}"
+
+  cat > "${xconf_dir}/20-keyboard.conf" <<'EOF'
+Section "InputClass"
+    Identifier "xrdp keyboard layout"
+    MatchIsKeyboard "on"
+    Option "XkbLayout" "us,ru"
+    Option "XkbOptions" "grp:alt_shift_toggle"
+EndSection
+EOF
+
+  log_success "xorg.conf.d/20-keyboard.conf создан"
 }
 
 # =============================================================================
@@ -278,6 +298,7 @@ main() {
   configure_openbox_menu
   configure_xresources
   configure_openbox_autostart
+  configure_xorg_keyboard
   add_xrdp_to_ssl_group
   enable_and_start
 
