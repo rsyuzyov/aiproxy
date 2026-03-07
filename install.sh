@@ -72,6 +72,10 @@ DO_BRAVE=false
 DO_REDSOCKS=false
 DO_AMNEZIA=false
 DO_PROXYBRIDGE=false
+DO_ANTIGRAVITY=false
+DO_CLAUDE_CODE=false
+DO_CLAUDE_DESKTOP=false
+DO_COCKPIT_TOOLS=false
 
 parse_args() {
   for arg in "$@"; do
@@ -80,15 +84,19 @@ parse_args() {
       --all)
         DO_CLIPROXY=true; DO_PROXYBRIDGE=true; DO_XRDP=true
         DO_FIREFOX=true ;;
-      --cliproxy)     DO_CLIPROXY=true ;;
-      --9router)      DO_9ROUTER=true ;;
-      --xrdp)         DO_XRDP=true ;;
-      --firefox)      DO_FIREFOX=true ;;
-      --brave)        DO_BRAVE=true ;;
-      --redsocks)     DO_REDSOCKS=true ;;
-      --amnezia)      DO_AMNEZIA=true ;;
-      --proxybridge)  DO_PROXYBRIDGE=true ;;
-      --help|-h)      show_help; exit 0 ;;
+      --cliproxy)        DO_CLIPROXY=true ;;
+      --9router)         DO_9ROUTER=true ;;
+      --xrdp)            DO_XRDP=true ;;
+      --firefox)         DO_FIREFOX=true ;;
+      --brave)           DO_BRAVE=true ;;
+      --redsocks)        DO_REDSOCKS=true ;;
+      --amnezia)         DO_AMNEZIA=true ;;
+      --proxybridge)     DO_PROXYBRIDGE=true ;;
+      --antigravity)     DO_ANTIGRAVITY=true ;;
+      --claude-code)     DO_CLAUDE_CODE=true ;;
+      --claude-desktop)  DO_CLAUDE_DESKTOP=true ;;
+      --cockpit-tools)   DO_COCKPIT_TOOLS=true ;;
+      --help|-h)         show_help; exit 0 ;;
       *) log_warn "Неизвестный аргумент: $arg" ;;
     esac
   done
@@ -111,6 +119,10 @@ ${BOLD}AIProxy Setup Installer${NC}
   --brave             Установить Brave Browser
   --redsocks          Настроить redsocks (SOCKS5 прокси, устаревший вариант)
   --amnezia           Установить AmneziaWG VPN-клиент
+  --antigravity       Установить Google Antigravity IDE
+  --claude-code       Установить Claude Code CLI (Anthropic)
+  --claude-desktop    Установить Claude Desktop (неофициальный Linux-порт)
+  --cockpit-tools     Установить Cockpit Tools (менеджер аккаунтов AI IDE)
   --non-interactive   Неинтерактивный режим (требует явных флагов)
   -y                  Синоним --non-interactive
   --help              Показать эту справку
@@ -124,6 +136,9 @@ ${BOLD}AIProxy Setup Installer${NC}
 
   # Только cliproxy-api и ProxyBridge:
   bash install.sh --cliproxy --proxybridge -y
+
+  # AI-инструменты (Antigravity + Claude Code + Cockpit Tools):
+  bash install.sh --antigravity --claude-code --cockpit-tools -y
 
   # Только AmneziaWG:
   bash install.sh --amnezia -y
@@ -181,15 +196,26 @@ EOF
   ask_yn "Установить AmneziaWG VPN-клиент?" && DO_AMNEZIA=true || true
 
   echo ""
+  echo -e "${BOLD}${CYAN}--- AI IDE инструменты ---${NC}"
+  ask_yn "Установить Google Antigravity IDE?" && DO_ANTIGRAVITY=true || true
+  ask_yn "Установить Claude Code CLI (Anthropic)?" && DO_CLAUDE_CODE=true || true
+  ask_yn "Установить Claude Desktop (неофициальный Linux-порт)?" && DO_CLAUDE_DESKTOP=true || true
+  ask_yn "Установить Cockpit Tools (менеджер аккаунтов AI IDE)?" && DO_COCKPIT_TOOLS=true || true
+
+  echo ""
   log_step "Выбранные компоненты"
-  [ "$DO_CLIPROXY"     = "true" ] && log_info "✓ cliproxy-api"
-  [ "$DO_PROXYBRIDGE" = "true" ] && log_info "✓ ProxyBridge"
-  [ "$DO_9ROUTER"      = "true" ] && log_info "✓ 9router"
-  [ "$DO_XRDP"         = "true" ] && log_info "✓ xrdp + openbox"
-  [ "$DO_FIREFOX"      = "true" ] && log_info "✓ Firefox ESR"
-  [ "$DO_BRAVE"        = "true" ] && log_info "✓ Brave Browser"
-  [ "$DO_REDSOCKS"     = "true" ] && log_info "✓ redsocks"
-  [ "$DO_AMNEZIA"      = "true" ] && log_info "✓ AmneziaWG VPN"
+  [ "$DO_CLIPROXY"       = "true" ] && log_info "✓ cliproxy-api"
+  [ "$DO_PROXYBRIDGE"   = "true" ] && log_info "✓ ProxyBridge"
+  [ "$DO_9ROUTER"        = "true" ] && log_info "✓ 9router"
+  [ "$DO_XRDP"           = "true" ] && log_info "✓ xrdp + openbox"
+  [ "$DO_FIREFOX"        = "true" ] && log_info "✓ Firefox ESR"
+  [ "$DO_BRAVE"          = "true" ] && log_info "✓ Brave Browser"
+  [ "$DO_REDSOCKS"       = "true" ] && log_info "✓ redsocks"
+  [ "$DO_AMNEZIA"        = "true" ] && log_info "✓ AmneziaWG VPN"
+  [ "$DO_ANTIGRAVITY"   = "true" ] && log_info "✓ Google Antigravity IDE"
+  [ "$DO_CLAUDE_CODE"   = "true" ] && log_info "✓ Claude Code CLI"
+  [ "$DO_CLAUDE_DESKTOP" = "true" ] && log_info "✓ Claude Desktop"
+  [ "$DO_COCKPIT_TOOLS" = "true" ] && log_info "✓ Cockpit Tools"
 
   # Предупреждение о конфликте redsocks и ProxyBridge
   if [ "$DO_REDSOCKS" = "true" ] && [ "$DO_PROXYBRIDGE" = "true" ]; then
@@ -201,7 +227,9 @@ EOF
   if [ "$DO_CLIPROXY" = "false" ] && [ "$DO_PROXYBRIDGE" = "false" ] && \
      [ "$DO_9ROUTER" = "false" ] && [ "$DO_XRDP" = "false" ] && \
      [ "$DO_FIREFOX" = "false" ] && [ "$DO_BRAVE" = "false" ] && \
-     [ "$DO_REDSOCKS" = "false" ] && [ "$DO_AMNEZIA" = "false" ]; then
+     [ "$DO_REDSOCKS" = "false" ] && [ "$DO_AMNEZIA" = "false" ] && \
+     [ "$DO_ANTIGRAVITY" = "false" ] && [ "$DO_CLAUDE_CODE" = "false" ] && \
+     [ "$DO_CLAUDE_DESKTOP" = "false" ] && [ "$DO_COCKPIT_TOOLS" = "false" ]; then
     log_warn "Ничего не выбрано. Выход."
     exit 0
   fi
@@ -294,6 +322,26 @@ run_installations() {
     log_step "Установка AmneziaWG VPN-клиента"
     run_component_script "${scripts_dir}/install-amnezia.sh"
   fi
+
+  if [ "$DO_ANTIGRAVITY" = "true" ]; then
+    log_step "Установка Google Antigravity IDE"
+    run_component_script "${scripts_dir}/install-antigravity.sh"
+  fi
+
+  if [ "$DO_CLAUDE_CODE" = "true" ]; then
+    log_step "Установка Claude Code CLI"
+    run_component_script "${scripts_dir}/install-claude-code.sh"
+  fi
+
+  if [ "$DO_CLAUDE_DESKTOP" = "true" ]; then
+    log_step "Установка Claude Desktop"
+    run_component_script "${scripts_dir}/install-claude-desktop.sh"
+  fi
+
+  if [ "$DO_COCKPIT_TOOLS" = "true" ]; then
+    log_step "Установка Cockpit Tools"
+    run_component_script "${scripts_dir}/install-cockpit-tools.sh"
+  fi
 }
 
 # --- Итоговый отчёт ---
@@ -320,7 +368,11 @@ EOF
   [ "$DO_FIREFOX"      = "true" ] && echo -e "  ${GREEN}✓${NC} Firefox ESR"
   [ "$DO_BRAVE"        = "true" ] && echo -e "  ${GREEN}✓${NC} Brave Browser"
   [ "$DO_REDSOCKS"     = "true" ] && echo -e "  ${GREEN}✓${NC} redsocks      (управление: ${INSTALL_DIR}/scripts/proxy-toggle.sh)"
-  [ "$DO_AMNEZIA"      = "true" ] && echo -e "  ${GREEN}✓${NC} AmneziaWG    (конфиг: /etc/amnezia/amneziawg/)"
+  [ "$DO_AMNEZIA"        = "true" ] && echo -e "  ${GREEN}✓${NC} AmneziaWG       (конфиг: /etc/amnezia/amneziawg/)"
+  [ "$DO_ANTIGRAVITY"   = "true" ] && echo -e "  ${GREEN}✓${NC} Antigravity IDE  (команда: antigravity)"
+  [ "$DO_CLAUDE_CODE"   = "true" ] && echo -e "  ${GREEN}✓${NC} Claude Code      (команда: claude)"
+  [ "$DO_CLAUDE_DESKTOP" = "true" ] && echo -e "  ${GREEN}✓${NC} Claude Desktop   (команда: claude-desktop)"
+  [ "$DO_COCKPIT_TOOLS" = "true" ] && echo -e "  ${GREEN}✓${NC} Cockpit Tools    (команда: cockpit-tools)"
 
   cat <<EOF
 

@@ -4,16 +4,20 @@
 
 ## Что включает
 
-| Компонент          | Описание                                                         |
-| ------------------ | ---------------------------------------------------------------- |
-| **cliproxy-api**   | AI-прокси сервер с поддержкой OpenAI/Gemini/Claude               |
-| **9router**        | Ещё один AI-прокси сервер (опционально)                          |
-| **ProxyBridge**    | Перенаправление TCP/UDP трафика через SOCKS5/HTTP прокси         |
-| **xrdp + openbox** | RDP-доступ к рабочему столу                                      |
-| **Firefox ESR**    | Браузер (опционально)                                            |
-| **Brave Browser**  | Альтернативный браузер (опционально)                             |
-| **redsocks**       | Перенаправление TCP-трафика через SOCKS5 прокси (устаревший)     |
-| **AmneziaWG**      | Альтернатива прокси для доступа к зарубежным провайдерам         |
+| Компонент             | Описание                                                              |
+| --------------------- | --------------------------------------------------------------------- |
+| **cliproxy-api**      | AI-прокси сервер с поддержкой OpenAI/Gemini/Claude                    |
+| **9router**           | Ещё один AI-прокси сервер (опционально)                               |
+| **ProxyBridge**       | Перенаправление TCP/UDP трафика через SOCKS5/HTTP прокси              |
+| **xrdp + openbox**    | RDP-доступ к рабочему столу                                           |
+| **Firefox ESR**       | Браузер (опционально)                                                 |
+| **Brave Browser**     | Альтернативный браузер (опционально)                                  |
+| **redsocks**          | Перенаправление TCP-трафика через SOCKS5 прокси (устаревший)          |
+| **AmneziaWG**         | Альтернатива прокси для доступа к зарубежным провайдерам              |
+| **Antigravity IDE**   | Google AI IDE на базе VS Code с Gemini (опционально)                  |
+| **Claude Code**       | CLI-агент от Anthropic для работы с кодом в терминале (опционально)   |
+| **Claude Desktop**    | Десктопное приложение Claude для Linux — неофициальный порт           |
+| **Cockpit Tools**     | Менеджер аккаунтов AI IDE: Antigravity, Copilot, Windsurf, Cursor...  |
 
 - Минимальный набор для установки — `cliproxy-api`.
 - Для работы с claude, openai и другими провайдерами можно установить **ProxyBridge** и арендовать прокси на https://px6.me (https://proxy6.net)
@@ -69,6 +73,9 @@ bash install.sh --cliproxy --proxybridge -y
 # Только cliproxy-api и xrdp
 bash install.sh --cliproxy --xrdp -y
 
+# AI-инструменты: Antigravity IDE + Claude Code + Cockpit Tools
+bash install.sh --antigravity --claude-code --cockpit-tools -y
+
 # С настройкой redsocks (устаревший вариант)
 bash install.sh --cliproxy --redsocks -y
 ```
@@ -86,6 +93,10 @@ bash install.sh --cliproxy --redsocks -y
 | `--brave`                  | Установить Brave Browser                                        |
 | `--redsocks`               | Настроить redsocks (устаревший, только TCP)                     |
 | `--amnezia`                | Установить AmneziaWG VPN-клиент                                 |
+| `--antigravity`            | Установить Google Antigravity IDE                               |
+| `--claude-code`            | Установить Claude Code CLI                                      |
+| `--claude-desktop`         | Установить Claude Desktop (неофициальный Linux-порт)            |
+| `--cockpit-tools`          | Установить Cockpit Tools (менеджер аккаунтов AI IDE)            |
 | `-y` / `--non-interactive` | Неинтерактивный режим                                           |
 | `--help`                   | Показать справку                                                |
 
@@ -188,6 +199,57 @@ proxy-toggle.sh status  # статус
 | `BYPASS` | redsocks остановлен, прямое соединение        |
 | `BROKEN` | Несогласованное состояние (нужна диагностика) |
 
+### Установка Google Antigravity IDE
+
+```bash
+bash ~/aiproxy/scripts/install-antigravity.sh
+```
+
+- Добавляет официальный APT-репозиторий `packages.antigravity.google`
+- Устанавливает пакет `antigravity` через `apt`
+- Запуск: `antigravity` или через меню приложений
+
+> Antigravity — AI IDE от Google на базе VS Code с интегрированным Gemini. Требует GUI (установите `--xrdp` для RDP-доступа).
+
+### Установка Claude Code CLI
+
+```bash
+bash ~/aiproxy/scripts/install-claude-code.sh
+```
+
+- Использует официальный нативный установщик: `curl -fsSL https://claude.ai/install.sh | bash`
+- Устанавливается в `~/.claude/bin/`
+- Требует аутентификации при первом запуске
+
+```bash
+claude          # запуск агента
+claude --help   # справка
+```
+
+### Установка Claude Desktop
+
+```bash
+bash ~/aiproxy/scripts/install-claude-desktop.sh
+```
+
+> ⚠ Официальный Claude Desktop поддерживается только на macOS и Windows. Скрипт устанавливает **неофициальный Debian-порт** ([aaddrick/claude-desktop-debian](https://github.com/aaddrick/claude-desktop-debian)) — перепаковку Windows-версии.
+
+- Пробует установить через APT-репозиторий, при неудаче — скачивает `.deb` с GitHub Releases
+- Поддерживает MCP (Model Context Protocol), системный трей, глобальные горячие клавиши
+- Запуск: `claude-desktop`
+
+### Установка Cockpit Tools
+
+```bash
+bash ~/aiproxy/scripts/install-cockpit-tools.sh
+```
+
+- Скачивает последний `.deb` с [GitHub Releases](https://github.com/jlcodes99/cockpit-tools/releases)
+- При отсутствии `.deb` — устанавливает `.AppImage`
+- Поддерживаемые платформы: **Antigravity, Codex, GitHub Copilot, Windsurf, Kiro, Cursor**
+- Возможности: мультиаккаунт, мониторинг квот, автопробуждение, множественные инстанции
+- Запуск: `cockpit-tools`
+
 ### Установка и настройка AmneziaWG VPN
 
 **Шаг 1. Установить AmneziaWG:**
@@ -236,6 +298,10 @@ aiproxy/
     ├── install-firefox.sh             # Установка Firefox ESR
     ├── install-brave.sh               # Установка Brave Browser
     ├── install-amnezia.sh             # Установка AmneziaWG VPN-клиента
+    ├── install-antigravity.sh         # Установка Google Antigravity IDE
+    ├── install-claude-code.sh         # Установка Claude Code CLI
+    ├── install-claude-desktop.sh      # Установка Claude Desktop (Linux-порт)
+    ├── install-cockpit-tools.sh       # Установка Cockpit Tools
     ├── setup-xrdp.sh                  # Настройка RDP + openbox
     ├── setup-redsocks.sh              # Настройка redsocks
     ├── setup-amnezia-connection.sh    # Настройка VPN-подключения Amnezia
