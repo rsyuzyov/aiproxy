@@ -70,6 +70,13 @@ if [ "${DEPLOY_EXIT}" -ne 0 ]; then
   exit "${DEPLOY_EXIT}"
 fi
 
+# deploy.sh оставляет активные nftables NFQUEUE-правила после установки.
+# Без запущенного демона ProxyBridge весь исходящий трафик зависает в очереди.
+# Выполняем --cleanup чтобы снять правила немедленно после установки.
+log_info "Очистка nftables-правил ProxyBridge после установки..."
+/usr/local/bin/ProxyBridge --cleanup 2>/dev/null || true
+log_success "nftables очищены"
+
 log_success "ProxyBridge успешно установлен"
 log_info "Команды:"
 log_info "  ProxyBridge --help"

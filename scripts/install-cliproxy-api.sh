@@ -324,7 +324,7 @@ tls:
 
 # Управление
 remote-management:
-  allow-remote: false
+  allow-remote: true
   secret-key: "123456"
   disable-control-panel: false
   panel-github-repository: "https://github.com/router-for-me/Cli-Proxy-API-Management-Center"
