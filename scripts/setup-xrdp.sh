@@ -43,7 +43,8 @@ install_packages() {
     x11-xserver-utils \
     x11-utils \
     xfonts-base \
-    xterm
+    xterm \
+    bash-completion
 
   log_success "Пакеты установлены"
 }
@@ -205,8 +206,16 @@ configure_openbox_menu() {
     <item label="Терминал">
       <action name="Execute"><command>xterm</command></action>
     </item>
+    <separator/>
     <item label="Firefox">
       <action name="Execute"><command>firefox-esr</command></action>
+    </item>
+    <item label="cliproxy-api (управление)">
+      <action name="Execute"><command>firefox-esr http://127.0.0.1:8317/management.html</command></action>
+    </item>
+    <separator/>
+    <item label="ProxyBridge GUI">
+      <action name="Execute"><command>ProxyBridgeGUI</command></action>
     </item>
     <separator/>
     <menu id="sys-menu" label="Система">
