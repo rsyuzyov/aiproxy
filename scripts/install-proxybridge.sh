@@ -8,6 +8,24 @@
 # =============================================================================
 set -euo pipefail
 
+# --- Проверка версии glibc ---
+# ProxyBridge v3.2.0 (первый стабильный Linux-релиз) требует glibc >= 2.38
+# Debian 12 (Bookworm) поставляется с glibc 2.36 — бинарник не запустится.
+REQUIRED_GLIBC="2.38"
+CURRENT_GLIBC=$(ldd --version 2>/dev/null | awk 'NR==1{print $NF}' || echo "0")
+
+version_ge() {
+  # Возвращает 0 (true) если $1 >= $2
+  printf '%s\n%s' "$2" "$1" | sort -C -V
+}
+
+if ! version_ge "$CURRENT_GLIBC" "$REQUIRED_GLIBC"; then
+  echo -e "${YELLOW:-\033[1;33m}[WARN]${NC:-\033[0m} ProxyBridge требует glibc >= ${REQUIRED_GLIBC}, обнаружена ${CURRENT_GLIBC}."
+  echo -e "${YELLOW:-\033[1;33m}[WARN]${NC:-\033[0m} Debian 12 (Bookworm) несовместим. Требуется Debian 13+ или Ubuntu 23.10+."
+  echo -e "${YELLOW:-\033[1;33m}[WARN]${NC:-\033[0m} Установка ProxyBridge пропущена."
+  exit 0
+fi
+
 PROXYBRIDGE_DEPLOY_URL="https://raw.githubusercontent.com/InterceptSuite/ProxyBridge/refs/heads/master/Linux/deploy.sh"
 DEPLOY_SCRIPT="/tmp/proxybridge-deploy-$$.sh"
 

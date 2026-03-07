@@ -308,7 +308,13 @@ ${NC}
 Установленные компоненты:
 EOF
   [ "$DO_CLIPROXY"     = "true" ] && echo -e "  ${GREEN}✓${NC} cliproxy-api  (http://localhost:8317)"
-  [ "$DO_PROXYBRIDGE" = "true" ] && echo -e "  ${GREEN}✓${NC} ProxyBridge   (ProxyBridge --help | ProxyBridgeGUI)"
+  if [ "$DO_PROXYBRIDGE" = "true" ]; then
+    if /usr/local/bin/ProxyBridge --help &>/dev/null 2>&1; then
+      echo -e "  ${GREEN}✓${NC} ProxyBridge   (ProxyBridge --help | ProxyBridgeGUI)"
+    else
+      echo -e "  ${YELLOW}⚠${NC} ProxyBridge   (установлен, но не поддерживается на этой ОС — требуется glibc >= 2.38)"
+    fi
+  fi
   [ "$DO_9ROUTER"      = "true" ] && echo -e "  ${GREEN}✓${NC} 9router       (http://localhost:20128)"
   [ "$DO_XRDP"         = "true" ] && echo -e "  ${GREEN}✓${NC} xrdp          (RDP порт 3389)"
   [ "$DO_FIREFOX"      = "true" ] && echo -e "  ${GREEN}✓${NC} Firefox ESR"
