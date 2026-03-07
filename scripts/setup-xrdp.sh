@@ -79,15 +79,15 @@ EOF
 }
 
 configure_keyboard_en() {
-  log_info "Настраиваю английскую раскладку клавиатуры (всегда US при RDP-входе)..."
+  log_info "Настраиваю раскладки клавиатуры (US + RU, переключение Alt+Shift)..."
 
-  # /etc/default/keyboard — системная раскладка
+  # /etc/default/keyboard — системная раскладка по умолчанию US
   cat > "/etc/default/keyboard" <<'EOF'
 # KEYBOARD CONFIGURATION FILE
 XKBMODEL="pc105"
-XKBLAYOUT="us"
-XKBVARIANT=""
-XKBOPTIONS=""
+XKBLAYOUT="us,ru"
+XKBVARIANT=","
+XKBOPTIONS="grp:alt_shift_toggle"
 BACKSPACE="guess"
 EOF
 
@@ -96,29 +96,19 @@ EOF
     setupcon --force --skip-unicode 2>/dev/null || true
   fi
 
-  # Принудительно установить US раскладку в xrdp.ini (override)
+  # Убедиться что override_keylayout ОТСУТСТВУЕТ в xrdp.ini —
+  # он жёстко фиксирует раскладку на уровне xrdp-протокола и
+  # блокирует переключение setxkbmap из openbox autostart.
   local xrdp_ini="/etc/xrdp/xrdp.ini"
   if [ -f "${xrdp_ini}" ]; then
     cp "${xrdp_ini}" "${xrdp_ini}.bak_kbd" 2>/dev/null || true
-
     sed -i '/^xrdp\.override_keyboard_type=/d' "${xrdp_ini}"
     sed -i '/^xrdp\.override_keyboard_subtype=/d' "${xrdp_ini}"
     sed -i '/^xrdp\.override_keylayout=/d' "${xrdp_ini}"
-
-    if grep -q '^\[Xorg\]' "${xrdp_ini}"; then
-      sed -i '/^\[Xorg\]/a xrdp.override_keyboard_type=0x04\nxrdp.override_keyboard_subtype=0x01\nxrdp.override_keylayout=0x00000409' "${xrdp_ini}"
-    else
-      cat >> "${xrdp_ini}" <<'EOF'
-
-; Force English (US) keyboard layout for all RDP sessions
-xrdp.override_keyboard_type=0x04
-xrdp.override_keyboard_subtype=0x01
-xrdp.override_keylayout=0x00000409
-EOF
-    fi
+    sed -i '/^; Force English/d' "${xrdp_ini}"
   fi
 
-  log_success "Раскладка клавиатуры настроена (US English)"
+  log_success "Раскладки клавиатуры настроены (US/RU, Alt+Shift для переключения)"
 }
 
 configure_xrdp_ini() {
