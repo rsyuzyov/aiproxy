@@ -71,23 +71,24 @@ DO_FIREFOX=false
 DO_BRAVE=false
 DO_REDSOCKS=false
 DO_AMNEZIA=false
+DO_PROXYBRIDGE=false
 
 parse_args() {
   for arg in "$@"; do
     case "$arg" in
       --non-interactive|-y) NON_INTERACTIVE=true ;;
       --all)
-        DO_CLIPROXY=true; DO_9ROUTER=true; DO_XRDP=true
-        DO_FIREFOX=true; DO_BRAVE=false; DO_REDSOCKS=true
-        DO_AMNEZIA=true ;;
-      --cliproxy)  DO_CLIPROXY=true ;;
-      --9router)   DO_9ROUTER=true ;;
-      --xrdp)      DO_XRDP=true ;;
-      --firefox)   DO_FIREFOX=true ;;
-      --brave)     DO_BRAVE=true ;;
-      --redsocks)  DO_REDSOCKS=true ;;
-      --amnezia)   DO_AMNEZIA=true ;;
-      --help|-h)   show_help; exit 0 ;;
+        DO_CLIPROXY=true; DO_PROXYBRIDGE=true; DO_XRDP=true
+        DO_FIREFOX=true ;;
+      --cliproxy)     DO_CLIPROXY=true ;;
+      --9router)      DO_9ROUTER=true ;;
+      --xrdp)         DO_XRDP=true ;;
+      --firefox)      DO_FIREFOX=true ;;
+      --brave)        DO_BRAVE=true ;;
+      --redsocks)     DO_REDSOCKS=true ;;
+      --amnezia)      DO_AMNEZIA=true ;;
+      --proxybridge)  DO_PROXYBRIDGE=true ;;
+      --help|-h)      show_help; exit 0 ;;
       *) log_warn "Неизвестный аргумент: $arg" ;;
     esac
   done
@@ -101,13 +102,14 @@ ${BOLD}AIProxy Setup Installer${NC}
   install.sh [OPTIONS]
 
 Опции:
-  --all               Установить всё (кроме Brave)
+  --all               Установить основной набор: cliproxy-api + ProxyBridge + xrdp + Firefox
   --cliproxy          Установить службу cliproxy-api
+  --proxybridge       Установить ProxyBridge (альтернатива redsocks, TCP+UDP прокси)
   --9router           Установить службу 9router
   --xrdp              Настроить xrdp + openbox (RDP-доступ)
   --firefox           Установить Firefox ESR
   --brave             Установить Brave Browser
-  --redsocks          Настроить redsocks (прокси)
+  --redsocks          Настроить redsocks (SOCKS5 прокси, устаревший вариант)
   --amnezia           Установить AmneziaWG VPN-клиент
   --non-interactive   Неинтерактивный режим (требует явных флагов)
   -y                  Синоним --non-interactive
@@ -117,11 +119,11 @@ ${BOLD}AIProxy Setup Installer${NC}
   # Интерактивный мастер:
   bash install.sh
 
-  # Установить всё автоматически:
+  # Установить основной набор автоматически:
   bash install.sh --all -y
 
-  # Только cliproxy-api и xrdp:
-  bash install.sh --cliproxy --xrdp -y
+  # Только cliproxy-api и ProxyBridge:
+  bash install.sh --cliproxy --proxybridge -y
 
   # Только AmneziaWG:
   bash install.sh --amnezia -y
@@ -170,27 +172,36 @@ ${NC}
 EOF
 
   ask_yn "Установить cliproxy-api (AI-прокси сервис)?" && DO_CLIPROXY=true || true
+  ask_yn "Установить ProxyBridge (TCP+UDP прокси, аналог redsocks)?" && DO_PROXYBRIDGE=true || true
   ask_yn "Установить 9router (Node.js роутер)?" && DO_9ROUTER=true || true
   ask_yn "Настроить xrdp + openbox (RDP-доступ)?" && DO_XRDP=true || true
   ask_yn "Установить Firefox ESR?" && DO_FIREFOX=true || true
   ask_yn "Установить Brave Browser?" && DO_BRAVE=true || true
-  ask_yn "Настроить redsocks (SOCKS5 прокси)?" && DO_REDSOCKS=true || true
+  ask_yn "Настроить redsocks (SOCKS5 прокси, устаревший)?" && DO_REDSOCKS=true || true
   ask_yn "Установить AmneziaWG VPN-клиент?" && DO_AMNEZIA=true || true
 
   echo ""
   log_step "Выбранные компоненты"
-  [ "$DO_CLIPROXY" = "true" ] && log_info "✓ cliproxy-api"
-  [ "$DO_9ROUTER"  = "true" ] && log_info "✓ 9router"
-  [ "$DO_XRDP"     = "true" ] && log_info "✓ xrdp + openbox"
-  [ "$DO_FIREFOX"  = "true" ] && log_info "✓ Firefox ESR"
-  [ "$DO_BRAVE"    = "true" ] && log_info "✓ Brave Browser"
-  [ "$DO_REDSOCKS" = "true" ] && log_info "✓ redsocks"
-  [ "$DO_AMNEZIA"  = "true" ] && log_info "✓ AmneziaWG VPN"
+  [ "$DO_CLIPROXY"     = "true" ] && log_info "✓ cliproxy-api"
+  [ "$DO_PROXYBRIDGE" = "true" ] && log_info "✓ ProxyBridge"
+  [ "$DO_9ROUTER"      = "true" ] && log_info "✓ 9router"
+  [ "$DO_XRDP"         = "true" ] && log_info "✓ xrdp + openbox"
+  [ "$DO_FIREFOX"      = "true" ] && log_info "✓ Firefox ESR"
+  [ "$DO_BRAVE"        = "true" ] && log_info "✓ Brave Browser"
+  [ "$DO_REDSOCKS"     = "true" ] && log_info "✓ redsocks"
+  [ "$DO_AMNEZIA"      = "true" ] && log_info "✓ AmneziaWG VPN"
 
-  if [ "$DO_CLIPROXY" = "false" ] && [ "$DO_9ROUTER" = "false" ] && \
-     [ "$DO_XRDP" = "false" ] && [ "$DO_FIREFOX" = "false" ] && \
-     [ "$DO_BRAVE" = "false" ] && [ "$DO_REDSOCKS" = "false" ] && \
-     [ "$DO_AMNEZIA" = "false" ]; then
+  # Предупреждение о конфликте redsocks и ProxyBridge
+  if [ "$DO_REDSOCKS" = "true" ] && [ "$DO_PROXYBRIDGE" = "true" ]; then
+    log_warn "⚠ Выбраны одновременно redsocks и ProxyBridge — оба управляют iptables и могут конфликтовать."
+    log_warn "  Рекомендуется использовать только один из них."
+    ask_yn "Продолжить несмотря на это?" || { log_warn "Отменено."; exit 0; }
+  fi
+
+  if [ "$DO_CLIPROXY" = "false" ] && [ "$DO_PROXYBRIDGE" = "false" ] && \
+     [ "$DO_9ROUTER" = "false" ] && [ "$DO_XRDP" = "false" ] && \
+     [ "$DO_FIREFOX" = "false" ] && [ "$DO_BRAVE" = "false" ] && \
+     [ "$DO_REDSOCKS" = "false" ] && [ "$DO_AMNEZIA" = "false" ]; then
     log_warn "Ничего не выбрано. Выход."
     exit 0
   fi
@@ -249,6 +260,11 @@ run_installations() {
     run_component_script "${scripts_dir}/install-cliproxy-api.sh"
   fi
 
+  if [ "$DO_PROXYBRIDGE" = "true" ]; then
+    log_step "Установка ProxyBridge"
+    run_component_script "${scripts_dir}/install-proxybridge.sh"
+  fi
+
   if [ "$DO_9ROUTER" = "true" ]; then
     log_step "Установка 9router"
     run_component_script "${scripts_dir}/install-9router.sh"
@@ -291,13 +307,14 @@ ${BOLD}${GREEN}
 ${NC}
 Установленные компоненты:
 EOF
-  [ "$DO_CLIPROXY" = "true" ] && echo -e "  ${GREEN}✓${NC} cliproxy-api  (http://localhost:8317)"
-  [ "$DO_9ROUTER"  = "true" ] && echo -e "  ${GREEN}✓${NC} 9router       (http://localhost:20128)"
-  [ "$DO_XRDP"     = "true" ] && echo -e "  ${GREEN}✓${NC} xrdp          (RDP порт 3389)"
-  [ "$DO_FIREFOX"  = "true" ] && echo -e "  ${GREEN}✓${NC} Firefox ESR"
-  [ "$DO_BRAVE"    = "true" ] && echo -e "  ${GREEN}✓${NC} Brave Browser"
-  [ "$DO_REDSOCKS" = "true" ] && echo -e "  ${GREEN}✓${NC} redsocks      (управление: ${INSTALL_DIR}/scripts/proxy-toggle.sh)"
-  [ "$DO_AMNEZIA"  = "true" ] && echo -e "  ${GREEN}✓${NC} AmneziaWG    (конфиг: /etc/amnezia/amneziawg/)"
+  [ "$DO_CLIPROXY"     = "true" ] && echo -e "  ${GREEN}✓${NC} cliproxy-api  (http://localhost:8317)"
+  [ "$DO_PROXYBRIDGE" = "true" ] && echo -e "  ${GREEN}✓${NC} ProxyBridge   (ProxyBridge --help | ProxyBridgeGUI)"
+  [ "$DO_9ROUTER"      = "true" ] && echo -e "  ${GREEN}✓${NC} 9router       (http://localhost:20128)"
+  [ "$DO_XRDP"         = "true" ] && echo -e "  ${GREEN}✓${NC} xrdp          (RDP порт 3389)"
+  [ "$DO_FIREFOX"      = "true" ] && echo -e "  ${GREEN}✓${NC} Firefox ESR"
+  [ "$DO_BRAVE"        = "true" ] && echo -e "  ${GREEN}✓${NC} Brave Browser"
+  [ "$DO_REDSOCKS"     = "true" ] && echo -e "  ${GREEN}✓${NC} redsocks      (управление: ${INSTALL_DIR}/scripts/proxy-toggle.sh)"
+  [ "$DO_AMNEZIA"      = "true" ] && echo -e "  ${GREEN}✓${NC} AmneziaWG    (конфиг: /etc/amnezia/amneziawg/)"
 
   cat <<EOF
 
@@ -339,6 +356,9 @@ main() {
 
   if [ "$NON_INTERACTIVE" = "false" ]; then
     interactive_menu
+  elif [ "$DO_REDSOCKS" = "true" ] && [ "$DO_PROXYBRIDGE" = "true" ]; then
+    log_warn "⚠ Выбраны одновременно --redsocks и --proxybridge — оба управляют iptables и могут конфликтовать."
+    log_warn "  Рекомендуется использовать только один из них."
   fi
 
   run_installations
