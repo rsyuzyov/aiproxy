@@ -4,20 +4,21 @@
 
 ## Что включает
 
-| Компонент             | Описание                                                              |
-| --------------------- | --------------------------------------------------------------------- |
-| **cliproxy-api**      | AI-прокси сервер с поддержкой OpenAI/Gemini/Claude                    |
-| **9router**           | Ещё один AI-прокси сервер (опционально)                               |
-| **ProxyBridge**       | Перенаправление TCP/UDP трафика через SOCKS5/HTTP прокси              |
-| **xrdp + openbox**    | RDP-доступ к рабочему столу                                           |
-| **Firefox ESR**       | Браузер (опционально)                                                 |
-| **Brave Browser**     | Альтернативный браузер (опционально)                                  |
-| **redsocks**          | Перенаправление TCP-трафика через SOCKS5 прокси (устаревший)          |
-| **AmneziaWG**         | Альтернатива прокси для доступа к зарубежным провайдерам              |
-| **Antigravity IDE**   | Google AI IDE на базе VS Code с Gemini (опционально)                  |
-| **Claude Code**       | CLI-агент от Anthropic для работы с кодом в терминале (опционально)   |
-| **Claude Desktop**    | Десктопное приложение Claude для Linux — неофициальный порт           |
-| **Cockpit Tools**     | Менеджер аккаунтов AI IDE: Antigravity, Copilot, Windsurf, Cursor...  |
+| Компонент           | Описание                                                             |
+| ------------------- | -------------------------------------------------------------------- |
+| **cliproxy-api**    | AI-прокси сервер с поддержкой OpenAI/Gemini/Claude                   |
+| **9router**         | Ещё один AI-прокси сервер                                            |
+| **Cockpit Tools**   | Менеджер аккаунтов AI IDE: Antigravity, Copilot, Windsurf, Cursor... |
+| **ProxyBridge**     | Перенаправление TCP/UDP трафика через SOCKS5/HTTP прокси             |
+| **redsocks**        | Перенаправление TCP-трафика через SOCKS5 прокси (устаревший)         |
+| **AmneziaWG**       | Альтернатива прокси для доступа к зарубежным провайдерам             |
+| **xrdp + openbox**  | RDP-доступ к рабочему столу                                          |
+| **Firefox ESR**     | Браузер                                                              |
+| **Brave Browser**   | Альтернативный браузер                                               |
+| **Claude Code**     | CLI-агент от Anthropic для работы с кодом в терминале                |
+| **Claude Desktop**  | Десктопное приложение Claude для Linux — неофициальный порт          |
+| **VS Code**         | Visual Studio Code — универсальный редактор от Microsoft             |
+| **Antigravity IDE** | Google AI IDE на базе VS Code с Gemini                               |
 
 - Минимальный набор для установки — `cliproxy-api`.
 - Для работы с claude, openai и другими провайдерами можно установить **ProxyBridge** и арендовать прокси на https://px6.me (https://proxy6.net)
@@ -30,6 +31,7 @@
 - Интернет-соединение
 
 **Ресурсы:**
+
 - Режим без GUI и браузера: 1 CPU / 512 MB ОЗУ / 2 GB диск
 - Режим с GUI и браузером: минимум 2 CPU / 4 GB / 4 GB, для комфортной работы 4 CPU / 8 GB / 4 GB
 
@@ -82,23 +84,24 @@ bash install.sh --cliproxy --redsocks -y
 
 ### Параметры командной строки
 
-| Параметр                   | Описание                                                        |
-| -------------------------- | --------------------------------------------------------------- |
-| `--all`                    | Основной набор: cliproxy-api + ProxyBridge + xrdp + Firefox     |
-| `--cliproxy`               | Установить cliproxy-api                                         |
-| `--proxybridge`            | Установить ProxyBridge (TCP+UDP прокси, аналог redsocks)        |
-| `--9router`                | Установить 9router                                              |
-| `--xrdp`                   | Настроить xrdp + openbox                                        |
-| `--firefox`                | Установить Firefox ESR                                          |
-| `--brave`                  | Установить Brave Browser                                        |
-| `--redsocks`               | Настроить redsocks (устаревший, только TCP)                     |
-| `--amnezia`                | Установить AmneziaWG VPN-клиент                                 |
-| `--antigravity`            | Установить Google Antigravity IDE                               |
-| `--claude-code`            | Установить Claude Code CLI                                      |
-| `--claude-desktop`         | Установить Claude Desktop (неофициальный Linux-порт)            |
-| `--cockpit-tools`          | Установить Cockpit Tools (менеджер аккаунтов AI IDE)            |
-| `-y` / `--non-interactive` | Неинтерактивный режим                                           |
-| `--help`                   | Показать справку                                                |
+| Параметр                   | Описание                                                    |
+| -------------------------- | ----------------------------------------------------------- |
+| `--all`                    | Основной набор: cliproxy-api + ProxyBridge + xrdp + Firefox |
+| `--cliproxy`               | Установить cliproxy-api                                     |
+| `--proxybridge`            | Установить ProxyBridge (TCP+UDP прокси, аналог redsocks)    |
+| `--9router`                | Установить 9router                                          |
+| `--xrdp`                   | Настроить xrdp + openbox                                    |
+| `--firefox`                | Установить Firefox ESR                                      |
+| `--brave`                  | Установить Brave Browser                                    |
+| `--redsocks`               | Настроить redsocks (устаревший, только TCP)                 |
+| `--amnezia`                | Установить AmneziaWG VPN-клиент                             |
+| `--antigravity`            | Установить Google Antigravity IDE                           |
+| `--claude-code`            | Установить Claude Code CLI                                  |
+| `--claude-desktop`         | Установить Claude Desktop (неофициальный Linux-порт)        |
+| `--cockpit-tools`          | Установить Cockpit Tools (менеджер аккаунтов AI IDE)        |
+| `--vscode`                 | Установить Visual Studio Code                               |
+| `-y` / `--non-interactive` | Неинтерактивный режим                                       |
+| `--help`                   | Показать справку                                            |
 
 > ⚠ **redsocks и ProxyBridge не следует использовать одновременно** — оба управляют iptables и могут конфликтовать. Рекомендуется ProxyBridge как более современная альтернатива.
 
@@ -250,6 +253,18 @@ bash ~/aiproxy/scripts/install-cockpit-tools.sh
 - Возможности: мультиаккаунт, мониторинг квот, автопробуждение, множественные инстанции
 - Запуск: `cockpit-tools`
 
+### Установка Visual Studio Code
+
+```bash
+bash ~/aiproxy/scripts/install-vscode.sh
+```
+
+- Добавляет официальный APT-репозиторий Microsoft
+- Устанавливает пакет `code` через `apt`
+- Запуск: `code` или через меню приложений
+
+> Для работы GUI требуется xrdp или другой способ доступа к рабочему столу. Установите `--xrdp` для RDP.
+
 ### Установка и настройка AmneziaWG VPN
 
 **Шаг 1. Установить AmneziaWG:**
@@ -302,6 +317,7 @@ aiproxy/
     ├── install-claude-code.sh         # Установка Claude Code CLI
     ├── install-claude-desktop.sh      # Установка Claude Desktop (Linux-порт)
     ├── install-cockpit-tools.sh       # Установка Cockpit Tools
+    ├── install-vscode.sh              # Установка Visual Studio Code
     ├── setup-xrdp.sh                  # Настройка RDP + openbox
     ├── setup-redsocks.sh              # Настройка redsocks
     ├── setup-amnezia-connection.sh    # Настройка VPN-подключения Amnezia

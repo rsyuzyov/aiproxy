@@ -76,6 +76,7 @@ DO_ANTIGRAVITY=false
 DO_CLAUDE_CODE=false
 DO_CLAUDE_DESKTOP=false
 DO_COCKPIT_TOOLS=false
+DO_VSCODE=false
 
 parse_args() {
   for arg in "$@"; do
@@ -96,6 +97,7 @@ parse_args() {
       --claude-code)     DO_CLAUDE_CODE=true ;;
       --claude-desktop)  DO_CLAUDE_DESKTOP=true ;;
       --cockpit-tools)   DO_COCKPIT_TOOLS=true ;;
+      --vscode)          DO_VSCODE=true ;;
       --help|-h)         show_help; exit 0 ;;
       *) log_warn "Неизвестный аргумент: $arg" ;;
     esac
@@ -123,6 +125,7 @@ ${BOLD}AIProxy Setup Installer${NC}
   --claude-code       Установить Claude Code CLI (Anthropic)
   --claude-desktop    Установить Claude Desktop (неофициальный Linux-порт)
   --cockpit-tools     Установить Cockpit Tools (менеджер аккаунтов AI IDE)
+  --vscode            Установить Visual Studio Code
   --non-interactive   Неинтерактивный режим (требует явных флагов)
   -y                  Синоним --non-interactive
   --help              Показать эту справку
@@ -201,6 +204,7 @@ EOF
   ask_yn "Установить Claude Code CLI (Anthropic)?" && DO_CLAUDE_CODE=true || true
   ask_yn "Установить Claude Desktop (неофициальный Linux-порт)?" && DO_CLAUDE_DESKTOP=true || true
   ask_yn "Установить Cockpit Tools (менеджер аккаунтов AI IDE)?" && DO_COCKPIT_TOOLS=true || true
+  ask_yn "Установить Visual Studio Code?" && DO_VSCODE=true || true
 
   echo ""
   log_step "Выбранные компоненты"
@@ -216,6 +220,7 @@ EOF
   [ "$DO_CLAUDE_CODE"   = "true" ] && log_info "✓ Claude Code CLI"
   [ "$DO_CLAUDE_DESKTOP" = "true" ] && log_info "✓ Claude Desktop"
   [ "$DO_COCKPIT_TOOLS" = "true" ] && log_info "✓ Cockpit Tools"
+  [ "$DO_VSCODE"        = "true" ] && log_info "✓ Visual Studio Code"
 
   # Предупреждение о конфликте redsocks и ProxyBridge
   if [ "$DO_REDSOCKS" = "true" ] && [ "$DO_PROXYBRIDGE" = "true" ]; then
@@ -229,7 +234,8 @@ EOF
      [ "$DO_FIREFOX" = "false" ] && [ "$DO_BRAVE" = "false" ] && \
      [ "$DO_REDSOCKS" = "false" ] && [ "$DO_AMNEZIA" = "false" ] && \
      [ "$DO_ANTIGRAVITY" = "false" ] && [ "$DO_CLAUDE_CODE" = "false" ] && \
-     [ "$DO_CLAUDE_DESKTOP" = "false" ] && [ "$DO_COCKPIT_TOOLS" = "false" ]; then
+     [ "$DO_CLAUDE_DESKTOP" = "false" ] && [ "$DO_COCKPIT_TOOLS" = "false" ] && \
+     [ "$DO_VSCODE" = "false" ]; then
     log_warn "Ничего не выбрано. Выход."
     exit 0
   fi
@@ -342,6 +348,11 @@ run_installations() {
     log_step "Установка Cockpit Tools"
     run_component_script "${scripts_dir}/install-cockpit-tools.sh"
   fi
+
+  if [ "$DO_VSCODE" = "true" ]; then
+    log_step "Установка Visual Studio Code"
+    run_component_script "${scripts_dir}/install-vscode.sh"
+  fi
 }
 
 # --- Итоговый отчёт ---
@@ -373,6 +384,7 @@ EOF
   [ "$DO_CLAUDE_CODE"   = "true" ] && echo -e "  ${GREEN}✓${NC} Claude Code      (команда: claude)"
   [ "$DO_CLAUDE_DESKTOP" = "true" ] && echo -e "  ${GREEN}✓${NC} Claude Desktop   (команда: claude-desktop)"
   [ "$DO_COCKPIT_TOOLS" = "true" ] && echo -e "  ${GREEN}✓${NC} Cockpit Tools    (команда: cockpit-tools)"
+  [ "$DO_VSCODE"        = "true" ] && echo -e "  ${GREEN}✓${NC} VS Code          (команда: code)"
 
   cat <<EOF
 
