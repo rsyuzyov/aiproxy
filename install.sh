@@ -67,6 +67,8 @@ NON_INTERACTIVE=false
 DO_CLIPROXY=false
 DO_9ROUTER=false
 DO_XRDP=false
+DO_OPENBOX=false
+DO_LXQT=false
 DO_FIREFOX=false
 DO_BRAVE=false
 DO_REDSOCKS=false
@@ -84,10 +86,12 @@ parse_args() {
       --non-interactive|-y) NON_INTERACTIVE=true ;;
       --all)
         DO_CLIPROXY=true; DO_PROXYBRIDGE=true; DO_XRDP=true
-        DO_FIREFOX=true ;;
+        DO_OPENBOX=true; DO_FIREFOX=true ;;
       --cliproxy)        DO_CLIPROXY=true ;;
       --9router)         DO_9ROUTER=true ;;
       --xrdp)            DO_XRDP=true ;;
+      --openbox)         DO_OPENBOX=true ;;
+      --lxqt)            DO_LXQT=true ;;
       --firefox)         DO_FIREFOX=true ;;
       --brave)           DO_BRAVE=true ;;
       --redsocks)        DO_REDSOCKS=true ;;
@@ -112,11 +116,13 @@ ${BOLD}AIProxy Setup Installer${NC}
   install.sh [OPTIONS]
 
 Опции:
-  --all               Установить основной набор: cliproxy-api + ProxyBridge + xrdp + Firefox
+  --all               Установить основной набор: cliproxy-api + ProxyBridge + xrdp + openbox + Firefox
   --cliproxy          Установить службу cliproxy-api
   --proxybridge       Установить ProxyBridge (альтернатива redsocks, TCP+UDP прокси)
   --9router           Установить службу 9router
-  --xrdp              Настроить xrdp + openbox (RDP-доступ)
+  --xrdp              Установить xrdp-сервер (без Desktop Environment)
+  --openbox           Настроить Openbox + tint2 как DE для xrdp
+  --lxqt              Настроить LXQt как DE для xrdp (только Debian 13)
   --firefox           Установить Firefox ESR
   --brave             Установить Brave Browser
   --redsocks          Настроить redsocks (SOCKS5 прокси, устаревший вариант)
@@ -192,7 +198,9 @@ EOF
   ask_yn "Установить cliproxy-api (AI-прокси сервис)?" && DO_CLIPROXY=true || true
   ask_yn "Установить ProxyBridge (TCP+UDP прокси, аналог redsocks)?" && DO_PROXYBRIDGE=true || true
   ask_yn "Установить 9router (Node.js роутер)?" && DO_9ROUTER=true || true
-  ask_yn "Настроить xrdp + openbox (RDP-доступ)?" && DO_XRDP=true || true
+  ask_yn "Установить xrdp-сервер (RDP, порт 3389)?" && DO_XRDP=true || true
+  ask_yn "Настроить Openbox + tint2 как рабочий стол?" && DO_OPENBOX=true || true
+  ask_yn "Настроить LXQt как рабочий стол (Debian 13)?" && DO_LXQT=true || true
   ask_yn "Установить Firefox ESR?" && DO_FIREFOX=true || true
   ask_yn "Установить Brave Browser?" && DO_BRAVE=true || true
   ask_yn "Настроить redsocks (SOCKS5 прокси, устаревший)?" && DO_REDSOCKS=true || true
@@ -211,7 +219,9 @@ EOF
   [ "$DO_CLIPROXY"       = "true" ] && log_info "✓ cliproxy-api"
   [ "$DO_PROXYBRIDGE"   = "true" ] && log_info "✓ ProxyBridge"
   [ "$DO_9ROUTER"        = "true" ] && log_info "✓ 9router"
-  [ "$DO_XRDP"           = "true" ] && log_info "✓ xrdp + openbox"
+  [ "$DO_XRDP"           = "true" ] && log_info "✓ xrdp-сервер"
+  [ "$DO_OPENBOX"        = "true" ] && log_info "✓ Openbox + tint2"
+  [ "$DO_LXQT"          = "true" ] && log_info "✓ LXQt"
   [ "$DO_FIREFOX"        = "true" ] && log_info "✓ Firefox ESR"
   [ "$DO_BRAVE"          = "true" ] && log_info "✓ Brave Browser"
   [ "$DO_REDSOCKS"       = "true" ] && log_info "✓ redsocks"
@@ -231,6 +241,7 @@ EOF
 
   if [ "$DO_CLIPROXY" = "false" ] && [ "$DO_PROXYBRIDGE" = "false" ] && \
      [ "$DO_9ROUTER" = "false" ] && [ "$DO_XRDP" = "false" ] && \
+     [ "$DO_OPENBOX" = "false" ] && [ "$DO_LXQT" = "false" ] && \
      [ "$DO_FIREFOX" = "false" ] && [ "$DO_BRAVE" = "false" ] && \
      [ "$DO_REDSOCKS" = "false" ] && [ "$DO_AMNEZIA" = "false" ] && \
      [ "$DO_ANTIGRAVITY" = "false" ] && [ "$DO_CLAUDE_CODE" = "false" ] && \
@@ -305,8 +316,18 @@ run_installations() {
   fi
 
   if [ "$DO_XRDP" = "true" ]; then
-    log_step "Настройка xrdp + openbox"
+    log_step "Установка xrdp-сервера"
     run_component_script "${scripts_dir}/setup-xrdp.sh"
+  fi
+
+  if [ "$DO_OPENBOX" = "true" ]; then
+    log_step "Настройка Openbox + tint2"
+    run_component_script "${scripts_dir}/setup-openbox.sh"
+  fi
+
+  if [ "$DO_LXQT" = "true" ]; then
+    log_step "Настройка LXQt"
+    run_component_script "${scripts_dir}/setup-lxqt.sh"
   fi
 
   if [ "$DO_FIREFOX" = "true" ]; then
@@ -375,7 +396,9 @@ EOF
     fi
   fi
   [ "$DO_9ROUTER"      = "true" ] && echo -e "  ${GREEN}✓${NC} 9router       (http://localhost:20128)"
-  [ "$DO_XRDP"         = "true" ] && echo -e "  ${GREEN}✓${NC} xrdp          (RDP порт 3389)"
+  [ "$DO_XRDP"         = "true" ] && echo -e "  ${GREEN}✓${NC} xrdp-сервер   (RDP порт 3389)"
+  [ "$DO_OPENBOX"      = "true" ] && echo -e "  ${GREEN}✓${NC} Openbox + tint2"
+  [ "$DO_LXQT"        = "true" ] && echo -e "  ${GREEN}✓${NC} LXQt"
   [ "$DO_FIREFOX"      = "true" ] && echo -e "  ${GREEN}✓${NC} Firefox ESR"
   [ "$DO_BRAVE"        = "true" ] && echo -e "  ${GREEN}✓${NC} Brave Browser"
   [ "$DO_REDSOCKS"     = "true" ] && echo -e "  ${GREEN}✓${NC} redsocks      (управление: ${INSTALL_DIR}/scripts/proxy-toggle.sh)"

@@ -1,21 +1,14 @@
 #!/usr/bin/env bash
 # =============================================================================
-# Настройка xrdp + openbox + tint2 для RDP-доступа
-# Особенности:
-#  - Всегда английская раскладка (US) при входе
-#  - openbox-session через dbus-launch
-#  - Вертикальная панель tint2 слева (конфиг: configs/tint2rc)
-#  - Контекстное меню openbox по ПКМ на рабочем столе
+# Настройка xrdp-сервера (без Desktop Environment)
+# Запускайте вместе с setup-openbox.sh или setup-lxqt.sh
 # =============================================================================
 set -euo pipefail
 
-REPO_RAW="https://raw.githubusercontent.com/rsyuzyov/aiproxy/master"
-INSTALL_DIR="${HOME}/aiproxy"
-
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m'
+RED='\\033[0;31m'
+GREEN='\\033[0;32m'
+YELLOW='\\033[1;33m'
+NC='\\033[0m'
 
 log_info()    { echo -e "${GREEN}[xrdp]${NC} $*"; }
 log_warn()    { echo -e "${YELLOW}[xrdp]${NC} $*"; }
@@ -33,82 +26,17 @@ install_packages() {
   log_info "Обновляю пакетный менеджер..."
   apt-get update -qq
 
-  log_info "Устанавливаю xrdp, openbox, tint2, dbus-x11..."
+  log_info "Устанавливаю xrdp, xorgxrdp, dbus-x11..."
   apt-get install -y -qq \
     xrdp \
     xorgxrdp \
-    openbox \
-    tint2 \
     dbus-x11 \
     x11-xserver-utils \
     x11-utils \
     xfonts-base \
-    xterm \
     bash-completion
 
-  log_success "Пакеты установлены"
-}
-
-configure_startwm() {
-  log_info "Настраиваю /etc/xrdp/startwm.sh..."
-
-  # Сохранить резервную копию если не существует
-  if [ ! -f "/etc/xrdp/startwm.sh.bak_orig" ]; then
-    cp "/etc/xrdp/startwm.sh" "/etc/xrdp/startwm.sh.bak_orig" 2>/dev/null || true
-  fi
-
-  cat > "/etc/xrdp/startwm.sh" <<'EOF'
-#!/bin/sh
-# XRDP session startup script
-
-# XDG runtime dir
-export XDG_RUNTIME_DIR=${XDG_RUNTIME_DIR:-/run/user/$(id -u)}
-[ -d "$XDG_RUNTIME_DIR" ] || { mkdir -p "$XDG_RUNTIME_DIR"; chmod 700 "$XDG_RUNTIME_DIR"; }
-
-# DISPLAY задаётся xrdp/sesman через env; fallback на :10
-export DISPLAY=${DISPLAY:-:10}
-
-export DESKTOP_SESSION=openbox
-export XDG_CURRENT_DESKTOP=Openbox
-
-exec dbus-launch --exit-with-session openbox-session
-EOF
-
-  chmod +x "/etc/xrdp/startwm.sh"
-  log_success "startwm.sh настроен"
-}
-
-configure_keyboard_en() {
-  log_info "Настраиваю раскладки клавиатуры (US + RU, переключение Alt+Shift)..."
-
-  # /etc/default/keyboard — системная раскладка по умолчанию US
-  cat > "/etc/default/keyboard" <<'EOF'
-# KEYBOARD CONFIGURATION FILE
-XKBMODEL="pc105"
-XKBLAYOUT="us,ru"
-XKBVARIANT=","
-XKBOPTIONS="grp:alt_shift_toggle"
-BACKSPACE="guess"
-EOF
-
-  # Применить раскладку
-  if command -v setupcon &>/dev/null; then
-    setupcon --force --skip-unicode 2>/dev/null || true
-  fi
-
-  # Убедиться что override_keylayout ОТСУТСТВУЕТ в xrdp.ini —
-  # он жёстко фиксирует раскладку на уровне xrdp-протокола и
-  # блокирует переключение setxkbmap из openbox autostart.
-  local xrdp_ini="/etc/xrdp/xrdp.ini"
-  if [ -f "${xrdp_ini}" ]; then
-    cp "${xrdp_ini}" "${xrdp_ini}.bak_kbd" 2>/dev/null || true
-    sed -i '/^xrdp\.override_keyboard_type=/d' "${xrdp_ini}"
-    sed -i '/^xrdp\.override_keyboard_subtype=/d' "${xrdp_ini}"
-    sed -i '/^xrdp\.override_keylayout=/d' "${xrdp_ini}"
-    sed -i '/^; Force English/d' "${xrdp_ini}"
-  fi
-
-  log_success "Раскладки клавиатуры настроены (US/RU, Alt+Shift для переключения)"
+  log_success "Пакеты xrdp установлены"
 }
 
 configure_xrdp_ini() {
@@ -129,6 +57,47 @@ configure_xrdp_ini() {
   fi
 
   log_success "xrdp.ini настроен"
+}
+
+configure_keyboard() {
+  log_info "Настраиваю раскладки клавиатуры (US + RU, переключение Alt+Shift)..."
+
+  cat > "/etc/default/keyboard" <<'EOF'
+# KEYBOARD CONFIGURATION FILE
+XKBMODEL="pc105"
+XKBLAYOUT="us,ru"
+XKBVARIANT=","
+XKBOPTIONS="grp:alt_shift_toggle"
+BACKSPACE="guess"
+EOF
+
+  if command -v setupcon &>/dev/null; then
+    setupcon --force --skip-unicode 2>/dev/null || true
+  fi
+
+  # Убрать override_keylayout из xrdp.ini — он блокирует переключение раскладки
+  local xrdp_ini="/etc/xrdp/xrdp.ini"
+  if [ -f "${xrdp_ini}" ]; then
+    cp "${xrdp_ini}" "${xrdp_ini}.bak_kbd" 2>/dev/null || true
+    sed -i '/^xrdp\.override_keyboard_type=/d' "${xrdp_ini}"
+    sed -i '/^xrdp\.override_keyboard_subtype=/d' "${xrdp_ini}"
+    sed -i '/^xrdp\.override_keylayout=/d' "${xrdp_ini}"
+    sed -i '/^; Force English/d' "${xrdp_ini}"
+  fi
+
+  # XKB-раскладка для xorg внутри xrdp
+  local xconf_dir="/etc/X11/xrdp/xorg.conf.d"
+  mkdir -p "${xconf_dir}"
+  cat > "${xconf_dir}/20-keyboard.conf" <<'EOF'
+Section "InputClass"
+    Identifier "xrdp keyboard layout"
+    MatchIsKeyboard "on"
+    Option "XkbLayout" "us,ru"
+    Option "XkbOptions" "grp:alt_shift_toggle"
+EndSection
+EOF
+
+  log_success "Раскладки клавиатуры настроены (US/RU, Alt+Shift)"
 }
 
 add_xrdp_to_ssl_group() {
@@ -154,136 +123,6 @@ enable_and_start() {
   fi
 }
 
-configure_tint2() {
-  log_info "Настраиваю tint2 (конфиг из репозитория)..."
-
-  local cfg_dir="/etc/xdg/tint2"
-  mkdir -p "${cfg_dir}"
-
-  # Скачать конфиг из репозитория
-  if command -v curl &>/dev/null; then
-    curl -fsSL "${REPO_RAW}/configs/tint2rc" -o "${cfg_dir}/tint2rc" 2>/dev/null && \
-      log_success "tint2rc загружен из репозитория" || true
-  elif command -v wget &>/dev/null; then
-    wget -qO "${cfg_dir}/tint2rc" "${REPO_RAW}/configs/tint2rc" 2>/dev/null && \
-      log_success "tint2rc загружен из репозитория" || true
-  fi
-
-  # Fallback — из локального репозитория
-  if [ ! -s "${cfg_dir}/tint2rc" ] && [ -f "${INSTALL_DIR}/configs/tint2rc" ]; then
-    cp "${INSTALL_DIR}/configs/tint2rc" "${cfg_dir}/tint2rc"
-    log_success "tint2rc скопирован из локального репозитория"
-  fi
-
-  if [ -s "${cfg_dir}/tint2rc" ]; then
-    log_success "tint2 настроен: ${cfg_dir}/tint2rc"
-  else
-    log_warn "Не удалось установить конфиг tint2, будет использован дефолтный"
-  fi
-}
-
-configure_openbox_menu() {
-  log_info "Настраиваю меню openbox (ПКМ на рабочем столе)..."
-
-  local ob_dir="/etc/xdg/openbox"
-  mkdir -p "${ob_dir}"
-
-  cat > "${ob_dir}/menu.xml" <<'EOF'
-<?xml version="1.0" encoding="UTF-8"?>
-<openbox_menu xmlns="http://openbox.org/3.4/menu">
-
-  <menu id="root-menu" label="Меню">
-    <item label="Терминал">
-      <action name="Execute"><command>xterm</command></action>
-    </item>
-    <separator/>
-    <item label="Firefox">
-      <action name="Execute"><command>firefox-esr</command></action>
-    </item>
-    <item label="cliproxy-api (управление)">
-      <action name="Execute"><command>firefox-esr http://127.0.0.1:8317/management.html</command></action>
-    </item>
-    <separator/>
-    <item label="ProxyBridge GUI">
-      <action name="Execute"><command>ProxyBridgeGUI</command></action>
-    </item>
-    <separator/>
-    <menu id="sys-menu" label="Система">
-      <item label="Перезапустить openbox">
-        <action name="Reconfigure"/>
-      </item>
-      <item label="Завершить сессию">
-        <action name="Exit"><prompt>no</prompt></action>
-      </item>
-    </menu>
-  </menu>
-
-</openbox_menu>
-EOF
-
-  log_success "menu.xml настроен"
-}
-
-configure_xresources() {
-  log_info "Настраиваю ~/.Xresources (xterm: ПКМ = вставить из буфера)..."
-
-  cat > /root/.Xresources << 'EOF'
-! XTerm — правая кнопка вставляет из буфера обмена
-XTerm*selectToClipboard: true
-XTerm*VT100.Translations: #override \
-  <Btn3Down>: insert-selection(CLIPBOARD,PRIMARY) \n \
-  Ctrl <Key>V: insert-selection(CLIPBOARD) \n \
-  Shift <Key>Insert: insert-selection(CLIPBOARD,PRIMARY)
-EOF
-
-  log_success "~/.Xresources настроен"
-}
-
-configure_openbox_autostart() {
-  log_info "Настраиваю автозапуск Openbox..."
-
-  local autostart_dir="/etc/xdg/openbox"
-  mkdir -p "${autostart_dir}"
-
-  cat > "${autostart_dir}/autostart" <<'EOF'
-# Openbox autostart — запускается при старте RDP-сессии
-
-# Фон рабочего стола (без него — чёрный экран)
-xsetroot -solid "#2e3440" &
-
-# Переключение раскладки Alt+Shift (us/ru).
-# sleep 2 нужен: xrdpkeyb-драйвер переинициализирует раскладку
-# после установки RDP-соединения и перезаписывает setxkbmap без задержки.
-(sleep 2 && setxkbmap -layout us,ru -option grp:alt_shift_toggle) &
-
-# X ресурсы (xterm: ПКМ = вставить из буфера)
-[ -f ~/.Xresources ] && xrdb -merge ~/.Xresources &
-
-# Панель задач (конфиг: /etc/xdg/tint2/tint2rc)
-tint2 &
-EOF
-
-  log_success "Openbox autostart настроен"
-}
-
-configure_xorg_keyboard() {
-  log_info "Настраиваю XKB-раскладки в xorg.conf.d (us,ru / Alt+Shift)..."
-
-  local xconf_dir="/etc/X11/xrdp/xorg.conf.d"
-  mkdir -p "${xconf_dir}"
-
-  cat > "${xconf_dir}/20-keyboard.conf" <<'EOF'
-Section "InputClass"
-    Identifier "xrdp keyboard layout"
-    MatchIsKeyboard "on"
-    Option "XkbLayout" "us,ru"
-    Option "XkbOptions" "grp:alt_shift_toggle"
-EndSection
-EOF
-
-  log_success "xorg.conf.d/20-keyboard.conf создан"
-}
-
 # =============================================================================
 # MAIN
 # =============================================================================
@@ -291,23 +130,16 @@ main() {
   require_root
 
   install_packages
-  configure_startwm
-  configure_keyboard_en
   configure_xrdp_ini
-  configure_tint2
-  configure_openbox_menu
-  configure_xresources
-  configure_openbox_autostart
-  configure_xorg_keyboard
+  configure_keyboard
   add_xrdp_to_ssl_group
   enable_and_start
 
   echo ""
-  log_success "xrdp + openbox настроены!"
-  log_info "Для подключения используйте RDP-клиент:"
-  log_info "  Хост: <IP сервера>"
-  log_info "  Порт: 3389"
-  log_info "  Пользователь: root (или другой пользователь системы)"
+  log_success "xrdp-сервер настроен!"
+  log_info "Теперь установите Desktop Environment:"
+  log_info "  setup-openbox.sh  — Openbox + tint2"
+  log_info "  setup-lxqt.sh     — LXQt (Debian 13)"
   log_warn "Убедитесь что порт 3389 открыт в firewall"
 }
 
