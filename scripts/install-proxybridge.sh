@@ -8,6 +8,9 @@
 # =============================================================================
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CONFIGS_DIR="${SCRIPT_DIR}/../configs"
+
 # --- Проверка версии glibc ---
 # ProxyBridge v3.2.0 (первый стабильный Linux-релиз) требует glibc >= 2.38
 # Debian 12 (Bookworm) поставляется с glibc 2.36 — бинарник не запустится.
@@ -78,10 +81,62 @@ log_info "Очистка nftables-правил ProxyBridge после устан
 log_success "nftables очищены"
 
 log_success "ProxyBridge успешно установлен"
-log_info "Команды:"
+
+# --- Копируем конфиг из репозитория ---
+CONFIG_SRC="${CONFIGS_DIR}/proxybridge/config"
+if [ ! -f "${CONFIG_SRC}" ]; then
+  log_error "Не найден конфиг: ${CONFIG_SRC}"
+  exit 1
+fi
+log_info "Копирую конфигурацию (direct-режим)..."
+mkdir -p /etc/proxybridge
+# Не перезаписываем если уже существует (пользователь мог изменить)
+if [ ! -f /etc/proxybridge/config ]; then
+  cp "${CONFIG_SRC}" /etc/proxybridge/config
+  log_success "Конфиг установлен: /etc/proxybridge/config"
+else
+  log_info "Конфиг уже существует, пропускаю: /etc/proxybridge/config"
+fi
+
+# --- Копируем systemd-сервис из репозитория ---
+SERVICE_SRC="${CONFIGS_DIR}/systemd/proxybridge.service"
+if [ ! -f "${SERVICE_SRC}" ]; then
+  log_error "Не найден systemd-юнит: ${SERVICE_SRC}"
+  exit 1
+fi
+log_info "Устанавливаю systemd-сервис proxybridge..."
+cp "${SERVICE_SRC}" /etc/systemd/system/proxybridge.service
+log_success "Сервис установлен: /etc/systemd/system/proxybridge.service"
+
+# --- Активируем сервис ---
+log_info "Активирую и запускаю proxybridge..."
+systemctl daemon-reload
+systemctl enable proxybridge
+systemctl start proxybridge
+sleep 1
+if systemctl is-active --quiet proxybridge; then
+  log_success "proxybridge запущен (direct-режим — весь трафик напрямую)"
+else
+  log_warn "proxybridge не запустился, проверь: journalctl -u proxybridge -n 20"
+fi
+
+log_info ""
+log_info "╔══════════════════════════════════════════════════════╗"
+log_info "║  ProxyBridge работает в режиме DIRECT (без прокси)  ║"
+log_info "║  Весь трафик пропускается напрямую.                 ║"
+log_info "╚══════════════════════════════════════════════════════╝"
+log_info ""
+log_info "Чтобы включить прокси, отредактируй /etc/proxybridge/config:"
+log_info "  1. Замени 'RULE=*:*:*:BOTH:DIRECT' на 'RULE=*:*:*:BOTH:PROXY'"
+log_info "  2. Добавь строку 'PROXY=socks5://127.0.0.1:1080'"
+log_info "  3. Перезапусти: systemctl restart proxybridge"
+log_info ""
+log_info "Полезные команды:"
+log_info "  systemctl status proxybridge"
+log_info "  systemctl restart proxybridge"
+log_info "  journalctl -u proxybridge -f"
 log_info "  ProxyBridge --help"
-log_info "  ProxyBridge --proxy socks5://IP:PORT --rule \"app:*:*:TCP:PROXY\""
-log_info "  ProxyBridge --cleanup   (очистка после сбоя)"
+log_info "  ProxyBridge --cleanup   (очистка nftables после сбоя)"
 if [ -f /usr/local/bin/ProxyBridgeGUI ]; then
   log_info "  ProxyBridgeGUI          (графический интерфейс, требует GTK3)"
 fi

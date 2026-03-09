@@ -10,7 +10,7 @@
 | **9router**         | Ещё один AI-прокси сервер                                            |
 | **Cockpit Tools**   | Менеджер аккаунтов AI IDE: Antigravity, Copilot, Windsurf, Cursor... |
 | **ProxyBridge**     | Перенаправление TCP/UDP трафика через SOCKS5/HTTP прокси             |
-| **redsocks**        | Перенаправление TCP-трафика через SOCKS5 прокси (устаревший)         |
+| **redsocks**        | Перенаправление TCP-трафика через SOCKS5 прокси                      |
 | **AmneziaWG**       | Альтернатива прокси для доступа к зарубежным провайдерам             |
 | **xrdp + openbox**  | RDP-доступ к рабочему столу                                          |
 | **Firefox ESR**     | Браузер                                                              |
@@ -26,7 +26,7 @@
 
 ## Требования
 
-- Debian 11 (Bullseye) или Debian 12 (Bookworm)
+- Debian 13
 - Доступ root
 - Интернет-соединение
 

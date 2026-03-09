@@ -1,0 +1,22 @@
+# ProxyBridge — файл правил маршрутизации трафика
+#
+# Формат: process:hosts:ports:protocol:action
+#   process  — имя процесса или * (все)
+#   hosts    — IP/хост или * (все)
+#   ports    — порт(ы) или * (все)
+#   protocol — TCP, UDP или BOTH
+#   action   — PROXY, DIRECT или BLOCK
+#
+# По умолчанию: весь трафик пропускается напрямую (DIRECT).
+# Чтобы включить прокси:
+#   1. Замените строку RULE=*:*:*:BOTH:DIRECT на RULE=*:*:*:BOTH:PROXY
+#   2. Добавьте строку: PROXY=socks5://127.0.0.1:1080
+#   3. Перезапустите: systemctl restart proxybridge
+#
+# Примеры:
+#   PROXY=socks5://127.0.0.1:1080
+#   RULE=*:*:*:BOTH:PROXY           — весь трафик через прокси
+#   RULE=firefox:*:*:TCP:PROXY      — только Firefox через прокси
+#   RULE=*:*:*:BOTH:DIRECT          — всё напрямую (текущий режим)
+
+RULE=*:*:*:BOTH:DIRECT
