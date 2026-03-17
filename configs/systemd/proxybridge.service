@@ -1,14 +1,10 @@
 [Unit]
-Description=ProxyBridge — прозрачный прокси-клиент
-Documentation=https://github.com/InterceptSuite/ProxyBridge
+Description=ProxyBridge
 After=network.target
-Wants=network.target
 
 [Service]
 Type=simple
-ExecStartPre=/bin/bash /usr/local/lib/proxybridge/gen-args.sh
-EnvironmentFile=/run/proxybridge.env
-ExecStart=/bin/bash -c 'eval exec /usr/local/bin/ProxyBridge $PROXYBRIDGE_ARGS'
+ExecStart=/bin/bash -c '. /usr/local/lib/proxybridge/gen-args.sh && eval exec /usr/local/bin/ProxyBridge $PROXYBRIDGE_ARGS'
 ExecStop=/usr/local/bin/ProxyBridge --cleanup
 Restart=on-failure
 RestartSec=5
