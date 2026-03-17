@@ -96,10 +96,19 @@ log_info "Копирую конфигурацию (direct-режим)..."
 mkdir -p /etc/proxybridge
 # Не перезаписываем если уже существует (пользователь мог изменить)
 if [ ! -f /etc/proxybridge/config ]; then
-  cp "${CONFIG_SRC}" /etc/proxybridge/config
+  sed 's/\r$//' "${CONFIG_SRC}" > /etc/proxybridge/config
   log_success "Конфиг установлен: /etc/proxybridge/config"
 else
   log_info "Конфиг уже существует, пропускаю: /etc/proxybridge/config"
+fi
+
+# --- Копируем скрипт генерации аргументов ---
+GENARGS_SRC="${SCRIPT_DIR}/proxybridge-gen-args.sh"
+if [ -f "${GENARGS_SRC}" ]; then
+  mkdir -p /usr/local/lib/proxybridge
+  sed 's/\r$//' "${GENARGS_SRC}" > /usr/local/lib/proxybridge/gen-args.sh
+  chmod +x /usr/local/lib/proxybridge/gen-args.sh
+  log_success "Скрипт gen-args.sh установлен"
 fi
 
 # --- Копируем systemd-сервис из репозитория ---
@@ -109,7 +118,7 @@ if [ ! -f "${SERVICE_SRC}" ]; then
   exit 1
 fi
 log_info "Устанавливаю systemd-сервис proxybridge..."
-cp "${SERVICE_SRC}" /etc/systemd/system/proxybridge.service
+sed 's/\r$//' "${SERVICE_SRC}" > /etc/systemd/system/proxybridge.service
 log_success "Сервис установлен: /etc/systemd/system/proxybridge.service"
 
 # --- Активируем сервис ---

@@ -6,21 +6,7 @@ Wants=network.target
 
 [Service]
 Type=simple
-# Правила маршрутизации читаются из /etc/proxybridge/config.
-# Строки вида RULE=... собираются в аргументы --rule.
-# Строка PROXY=... задаёт прокси-сервер (необязательна в direct-режиме).
-ExecStartPre=/bin/bash -c '\
-  RULES=$(grep -v "^#" /etc/proxybridge/config | grep "^RULE=" | sed "s/^RULE=//"); \
-  RULE_ARGS=""; \
-  while IFS= read -r line; do \
-    [ -n "$line" ] && RULE_ARGS="$RULE_ARGS --rule \"$line\""; \
-  done <<< "$RULES"; \
-  PROXY=$(grep -v "^#" /etc/proxybridge/config | grep "^PROXY=" | tail -1 | sed "s/^PROXY=//"); \
-  if [ -n "$PROXY" ]; then \
-    echo "PROXYBRIDGE_ARGS=--proxy $PROXY $RULE_ARGS" > /run/proxybridge.env; \
-  else \
-    echo "PROXYBRIDGE_ARGS=$RULE_ARGS" > /run/proxybridge.env; \
-  fi'
+ExecStartPre=/bin/bash /usr/local/lib/proxybridge/gen-args.sh
 EnvironmentFile=/run/proxybridge.env
 ExecStart=/bin/bash -c 'eval exec /usr/local/bin/ProxyBridge $PROXYBRIDGE_ARGS'
 ExecStop=/usr/local/bin/ProxyBridge --cleanup
