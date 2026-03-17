@@ -62,15 +62,19 @@ log_success "deploy.sh скачан"
 
 # --- Запускаем официальный установщик (мы уже root, sudo не нужен) ---
 log_info "Запускаю официальный ProxyBridge установщик..."
-bash "${DEPLOY_SCRIPT}"
-DEPLOY_EXIT=$?
+DEPLOY_EXIT=0
+bash "${DEPLOY_SCRIPT}" || DEPLOY_EXIT=$?
 
 # --- Очистка ---
 rm -f "${DEPLOY_SCRIPT}"
 
 if [ "${DEPLOY_EXIT}" -ne 0 ]; then
-  log_error "ProxyBridge установщик завершился с ошибкой (exit ${DEPLOY_EXIT})"
-  exit "${DEPLOY_EXIT}"
+  log_warn "ProxyBridge deploy.sh завершился с кодом ${DEPLOY_EXIT}"
+  if [ ! -x /usr/local/bin/ProxyBridge ]; then
+    log_error "Бинарник ProxyBridge не найден — установка не удалась"
+    exit "${DEPLOY_EXIT}"
+  fi
+  log_info "Бинарник ProxyBridge на месте, продолжаю настройку..."
 fi
 
 # deploy.sh оставляет активные nftables NFQUEUE-правила после установки.
