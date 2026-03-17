@@ -34,11 +34,20 @@ require_root() {
 
 # --- Локали (для корректной кириллицы и стабильной работы apt/debconf) ---
 ensure_locales() {
+  # Пропустить если обе локали уже сгенерированы
+  if locale -a 2>/dev/null | grep -q 'en_US.utf8' && \
+     locale -a 2>/dev/null | grep -q 'ru_RU.utf8'; then
+    export LANG=ru_RU.UTF-8
+    export LC_ALL=ru_RU.UTF-8
+    log_success "Локали уже настроены, пропускаю"
+    return
+  fi
+
   log_step "Настройка локалей (en_US.UTF-8 и ru_RU.UTF-8)"
 
   export DEBIAN_FRONTEND=noninteractive
   apt-get update -qq
-  apt-get install -y -qq locales
+  apt-get install -y locales
 
   if grep -q '^#\s*en_US.UTF-8 UTF-8' /etc/locale.gen; then
     sed -i 's/^#\s*en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen
