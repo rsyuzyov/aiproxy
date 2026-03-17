@@ -23,9 +23,9 @@ version_ge() {
 }
 
 if ! version_ge "$CURRENT_GLIBC" "$REQUIRED_GLIBC"; then
-  echo -e "${YELLOW:-\033[1;33m}[WARN]${NC:-\033[0m} ProxyBridge требует glibc >= ${REQUIRED_GLIBC}, обнаружена ${CURRENT_GLIBC}."
-  echo -e "${YELLOW:-\033[1;33m}[WARN]${NC:-\033[0m} Debian 12 (Bookworm) несовместим. Требуется Debian 13+ или Ubuntu 23.10+."
-  echo -e "${YELLOW:-\033[1;33m}[WARN]${NC:-\033[0m} Установка ProxyBridge пропущена."
+  echo -e "${YELLOW:-$'\033[1;33m'}[WARN]${NC:-$'\033[0m'} ProxyBridge требует glibc >= ${REQUIRED_GLIBC}, обнаружена ${CURRENT_GLIBC}."
+  echo -e "${YELLOW:-$'\033[1;33m'}[WARN]${NC:-$'\033[0m'} Debian 12 (Bookworm) несовместим. Требуется Debian 13+ или Ubuntu 23.10+."
+  echo -e "${YELLOW:-$'\033[1;33m'}[WARN]${NC:-$'\033[0m'} Установка ProxyBridge пропущена."
   exit 0
 fi
 
@@ -33,11 +33,11 @@ PROXYBRIDGE_DEPLOY_URL="https://raw.githubusercontent.com/InterceptSuite/ProxyBr
 DEPLOY_SCRIPT="/tmp/proxybridge-deploy-$$.sh"
 
 # --- Цвета (если не переданы из родительского) ---
-GREEN="${GREEN:-\033[0;32m}"
-YELLOW="${YELLOW:-\033[1;33m}"
-RED="${RED:-\033[0;31m}"
-BOLD="${BOLD:-\033[1m}"
-NC="${NC:-\033[0m}"
+GREEN="${GREEN:-$'\033[0;32m'}"
+YELLOW="${YELLOW:-$'\033[1;33m'}"
+RED="${RED:-$'\033[0;31m'}"
+BOLD="${BOLD:-$'\033[1m'}"
+NC="${NC:-$'\033[0m'}"
 
 log_info()    { echo -e "${GREEN}[INFO]${NC} $*"; }
 log_warn()    { echo -e "${YELLOW}[WARN]${NC} $*"; }
