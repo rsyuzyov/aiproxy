@@ -10,13 +10,13 @@ REPO_RAW="https://raw.githubusercontent.com/rsyuzyov/aiproxy/master"
 INSTALL_DIR="${HOME}/aiproxy"
 
 # --- Цвета ---
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-CYAN='\033[0;36m'
-BOLD='\033[1m'
-NC='\033[0m'
+RED=$'\033[0;31m'
+GREEN=$'\033[0;32m'
+YELLOW=$'\033[1;33m'
+BLUE=$'\033[0;34m'
+CYAN=$'\033[0;36m'
+BOLD=$'\033[1m'
+NC=$'\033[0m'
 
 log_info()    { echo -e "${GREEN}[INFO]${NC} $*"; }
 log_warn()    { echo -e "${YELLOW}[WARN]${NC} $*"; }
@@ -183,6 +183,15 @@ ensure_repo() {
 
 # --- Интерактивное меню ---
 interactive_menu() {
+  # Проверка: при запуске через pipe (wget|bash) /dev/tty нужен для интерактивного ввода
+  if ! exec 3</dev/tty 2>/dev/null; then
+    log_error "Невозможно открыть /dev/tty для интерактивного ввода."
+    log_error "Используйте: wget -O install.sh ... && bash install.sh"
+    log_error "Или передайте компоненты флагами: install.sh --cliproxy --xrdp -y"
+    exit 1
+  fi
+  exec 3<&-
+
   clear
   cat <<EOF
 ${BOLD}${CYAN}
@@ -259,7 +268,7 @@ ask_yn() {
   local prompt="$1"
   local answer
   printf "${YELLOW}?${NC} %s [y/N] " "$prompt"
-  read -r answer
+  read -r answer </dev/tty
   case "${answer,,}" in
     y|yes|д|да) return 0 ;;
     *) return 1 ;;
