@@ -28,7 +28,7 @@ require_root() {
 install_deps() {
   log_info "Устанавливаю зависимости..."
   apt-get update -qq
-  apt-get install -y -qq curl gpg apt-transport-https ca-certificates
+  apt-get install -y curl gpg apt-transport-https ca-certificates
 }
 
 add_vscode_repo() {
@@ -49,10 +49,10 @@ add_vscode_repo() {
 install_vscode() {
   if dpkg -l code &>/dev/null 2>&1; then
     log_info "VS Code уже установлен, обновляю..."
-    apt-get install -y -qq --only-upgrade code
+    apt-get install -y --only-upgrade code
   else
     log_info "Устанавливаю Visual Studio Code..."
-    apt-get install -y -qq code
+    apt-get install -y code
   fi
 
   local ver

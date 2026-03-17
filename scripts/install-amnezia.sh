@@ -52,13 +52,13 @@ install_via_ppa() {
   log_info "Добавляю PPA freya-os/amneziawg..."
 
   export DEBIAN_FRONTEND=noninteractive
-  apt-get install -y -qq software-properties-common gnupg curl
+  apt-get install -y software-properties-common gnupg curl
 
   # PPA поддерживает Ubuntu; для Debian используем deb-файл
   if [ "${distro}" = "ubuntu" ]; then
     add-apt-repository -y ppa:freya-os/amneziawg
     apt-get update -qq
-    apt-get install -y -qq amneziawg amneziawg-tools
+    apt-get install -y amneziawg amneziawg-tools
     log_success "AmneziaWG установлен через PPA"
     return 0
   fi
@@ -70,7 +70,7 @@ install_via_deb() {
   log_info "Устанавливаю AmneziaWG через deb-пакет с GitHub Releases..."
 
   export DEBIAN_FRONTEND=noninteractive
-  apt-get install -y -qq curl
+  apt-get install -y curl
 
   # Определяем последнюю версию через GitHub API
   local api_url="https://api.github.com/repos/amnezia-vpn/amneziawg-linux-kernel-module/releases/latest"
@@ -104,7 +104,7 @@ install_from_source() {
   log_info "Установка AmneziaWG из исходников (может занять несколько минут)..."
 
   export DEBIAN_FRONTEND=noninteractive
-  apt-get install -y -qq \
+  apt-get install -y \
     build-essential \
     linux-headers-"$(uname -r)" \
     git \
@@ -129,7 +129,7 @@ install_from_source() {
 install_wg_tools_compat() {
   # wireguard-tools нужны для awg-quick и wg-quick обёртки
   export DEBIAN_FRONTEND=noninteractive
-  apt-get install -y -qq wireguard-tools
+  apt-get install -y wireguard-tools
   log_success "wireguard-tools (wg-quick) установлены"
 }
 

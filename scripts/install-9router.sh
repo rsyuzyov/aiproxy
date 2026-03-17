@@ -41,11 +41,11 @@ install_nodejs() {
   log_info "Устанавливаю Node.js ${NODE_VERSION}.x через NodeSource..."
 
   apt-get update -qq
-  apt-get install -y -qq curl gnupg
+  apt-get install -y curl gnupg
 
   # NodeSource репозиторий
   curl -fsSL "https://deb.nodesource.com/setup_${NODE_VERSION}.x" | bash -
-  apt-get install -y -qq nodejs
+  apt-get install -y nodejs
 
   log_success "Node.js установлен: $(node --version)"
   log_success "npm: $(npm --version)"

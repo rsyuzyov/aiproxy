@@ -48,7 +48,7 @@ install_cockpit_tools() {
 
   log_info "Устанавливаем зависимости..."
   apt-get update -qq
-  apt-get install -y -qq curl jq libgtk-3-0 libnotify4 libnss3 libxss1 xdg-utils \
+  apt-get install -y curl jq libgtk-3-0 libnotify4 libnss3 libxss1 xdg-utils \
     libatspi2.0-0 libdrm2 libgbm1 libsecret-1-0 2>/dev/null || true
 
   log_info "Определяем последнюю версию Cockpit Tools..."

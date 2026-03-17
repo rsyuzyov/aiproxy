@@ -37,7 +37,7 @@ install_packages() {
   log_info "Устанавливаю LXQt..."
   apt-get update -qq
 
-  apt-get install -y -qq \
+  apt-get install -y \
     lxqt-core \
     lxqt-session \
     openbox \

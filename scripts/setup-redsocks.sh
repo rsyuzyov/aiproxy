@@ -41,7 +41,7 @@ install_redsocks_tools() {
 
   log_info "Устанавливаю необходимые пакеты redsocks/iptables..."
   apt-get update -qq
-  apt-get install -y -qq redsocks iptables netfilter-persistent iptables-persistent
+  apt-get install -y redsocks iptables netfilter-persistent iptables-persistent
   log_success "Пакеты redsocks/iptables установлены"
 }
 

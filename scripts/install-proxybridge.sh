@@ -48,7 +48,7 @@ log_success() { echo -e "${GREEN}[OK]${NC} $*"; }
 if ! command -v curl &>/dev/null; then
   log_info "Устанавливаю curl..."
   apt-get update -qq
-  apt-get install -y -qq curl
+  apt-get install -y curl
 fi
 
 # --- Скачать официальный deploy.sh ---

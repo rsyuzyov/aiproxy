@@ -27,7 +27,7 @@ install_claude_code() {
   if ! command -v curl &>/dev/null; then
     log_info "Устанавливаем curl..."
     apt-get update -qq
-    apt-get install -y -qq curl
+    apt-get install -y curl
   fi
 
   log_info "Запускаем официальный установщик Claude Code..."

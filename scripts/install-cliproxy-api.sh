@@ -51,7 +51,7 @@ install_deps() {
   if [ "${#pkgs[@]}" -gt 0 ]; then
     log_info "Устанавливаю: ${pkgs[*]}"
     apt-get update -qq
-    apt-get install -y -qq "${pkgs[@]}"
+    apt-get install -y "${pkgs[@]}"
   fi
 }
 

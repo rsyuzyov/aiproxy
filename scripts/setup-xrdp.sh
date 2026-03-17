@@ -27,7 +27,7 @@ install_packages() {
   apt-get update -qq
 
   log_info "Устанавливаю xrdp, xorgxrdp, dbus-x11..."
-  apt-get install -y -qq \
+  apt-get install -y \
     xrdp \
     xorgxrdp \
     dbus-x11 \

@@ -28,7 +28,7 @@ require_root() {
 install_deps() {
   log_info "Устанавливаю зависимости..."
   apt-get update -qq
-  apt-get install -y -qq curl gnupg apt-transport-https
+  apt-get install -y curl gnupg apt-transport-https
 }
 
 add_brave_repo() {
@@ -49,10 +49,10 @@ add_brave_repo() {
 install_brave() {
   if dpkg -l brave-browser &>/dev/null 2>&1; then
     log_info "Brave Browser уже установлен, обновляю..."
-    apt-get install -y -qq --only-upgrade brave-browser
+    apt-get install -y --only-upgrade brave-browser
   else
     log_info "Устанавливаю Brave Browser..."
-    apt-get install -y -qq brave-browser
+    apt-get install -y brave-browser
   fi
 
   local ver

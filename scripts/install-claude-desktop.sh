@@ -40,10 +40,10 @@ check_distro() {
 install_dependencies() {
   log_info "Устанавливаем зависимости..."
   apt-get update -qq
-  apt-get install -y -qq curl gnupg apt-transport-https ca-certificates
+  apt-get install -y curl gnupg apt-transport-https ca-certificates
 
   # claude-desktop требует дополнительных зависимостей (Electron-приложение)
-  apt-get install -y -qq \
+  apt-get install -y \
     libgtk-3-0 \
     libnotify4 \
     libnss3 \

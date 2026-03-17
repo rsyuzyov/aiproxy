@@ -33,7 +33,7 @@ install_antigravity() {
 
   log_info "Устанавливаем зависимости..."
   apt-get update -qq
-  apt-get install -y -qq curl gnupg apt-transport-https ca-certificates
+  apt-get install -y curl gnupg apt-transport-https ca-certificates
 
   log_info "Добавляем GPG-ключ репозитория Antigravity..."
   mkdir -p /etc/apt/keyrings

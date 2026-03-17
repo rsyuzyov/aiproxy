@@ -28,7 +28,7 @@ require_root() {
 install_packages() {
   log_info "Устанавливаю openbox, tint2, xterm..."
   apt-get update -qq
-  apt-get install -y -qq \
+  apt-get install -y \
     openbox \
     tint2 \
     xterm

@@ -34,10 +34,10 @@ install_firefox() {
 
   if [ "${pkg_status}" = "install ok installed" ]; then
     log_info "Firefox ESR уже установлен, обновляю до актуальной версии..."
-    apt-get install -y -qq --only-upgrade firefox-esr
+    apt-get install -y --only-upgrade firefox-esr
   else
     log_info "Firefox ESR не установлен (статус: '${pkg_status:-отсутствует}'), выполняю установку..."
-    apt-get install -y -qq firefox-esr
+    apt-get install -y firefox-esr
   fi
 
   # --- Self-check: убеждаемся, что пакет действительно установлен ---
