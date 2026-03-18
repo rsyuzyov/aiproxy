@@ -40,10 +40,18 @@ install_gost_binary() {
   fi
 
   log_info "Скачиваю и устанавливаю gost..."
-  if ! bash <(curl -fsSL https://github.com/go-gost/gost/raw/master/install.sh) --install; then
-    log_error "Не удалось установить gost"
+  local tmp_installer="/tmp/gost-install.sh"
+  if ! curl -fsSL -o "${tmp_installer}" https://github.com/go-gost/gost/raw/master/install.sh; then
+    log_error "Не удалось скачать установочный скрипт gost"
     exit 1
   fi
+  chmod +x "${tmp_installer}"
+  if ! bash "${tmp_installer}" --install; then
+    log_error "Не удалось установить gost"
+    rm -f "${tmp_installer}"
+    exit 1
+  fi
+  rm -f "${tmp_installer}"
 
   if ! command -v gost &>/dev/null; then
     log_error "Бинарник gost не найден после установки"
