@@ -20,7 +20,7 @@
 
 Отдельно проверь и зафиксируй:
 
-- статус сервисов cliproxy-api, 9router, xrdp, xrdp-sesman, redsocks;
+- статус сервисов cliproxy-api, 9router, xrdp, xrdp-sesman, gost;
 - наличие firefox-esr;
 - прослушивание портов 8317/20128/3389;
 - состояние dpkg/apt lock;

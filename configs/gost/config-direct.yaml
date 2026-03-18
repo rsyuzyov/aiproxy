@@ -1,0 +1,15 @@
+# GOST — конфигурация (direct-режим, без upstream прокси)
+#
+# Gost слушает на 0.0.0.0:1080 как SOCKS5 без авторизации.
+# Весь трафик идёт напрямую в интернет.
+#
+# Для включения upstream прокси используйте:
+#   gost-toggle.sh set <ip> <port> <login> <password>
+
+services:
+  - name: local-socks5
+    addr: ":1080"
+    handler:
+      type: socks5
+    listener:
+      type: tcp

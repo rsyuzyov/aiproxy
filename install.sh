@@ -80,7 +80,7 @@ DO_OPENBOX=false
 DO_LXQT=false
 DO_FIREFOX=false
 DO_BRAVE=false
-DO_REDSOCKS=false
+DO_GOST=false
 DO_AMNEZIA=false
 DO_PROXYBRIDGE=false
 DO_ANTIGRAVITY=false
@@ -94,8 +94,8 @@ parse_args() {
     case "$arg" in
       --non-interactive|-y) NON_INTERACTIVE=true ;;
       --all)
-        DO_CLIPROXY=true; DO_PROXYBRIDGE=true; DO_XRDP=true
-        DO_OPENBOX=true; DO_FIREFOX=true ;;
+        DO_CLIPROXY=true; DO_9ROUTER=true; DO_GOST=true; DO_PROXYBRIDGE=true
+        DO_XRDP=true; DO_OPENBOX=true; DO_FIREFOX=true ;;
       --cliproxy)        DO_CLIPROXY=true ;;
       --9router)         DO_9ROUTER=true ;;
       --xrdp)            DO_XRDP=true ;;
@@ -103,7 +103,7 @@ parse_args() {
       --lxqt)            DO_LXQT=true ;;
       --firefox)         DO_FIREFOX=true ;;
       --brave)           DO_BRAVE=true ;;
-      --redsocks)        DO_REDSOCKS=true ;;
+      --gost)            DO_GOST=true ;;
       --amnezia)         DO_AMNEZIA=true ;;
       --proxybridge)     DO_PROXYBRIDGE=true ;;
       --antigravity)     DO_ANTIGRAVITY=true ;;
@@ -125,16 +125,16 @@ ${BOLD}AIProxy Setup Installer${NC}
   install.sh [OPTIONS]
 
 Опции:
-  --all               Установить основной набор: cliproxy-api + ProxyBridge + xrdp + openbox + Firefox
+  --all               Установить основной набор: cliproxy + 9router + gost + ProxyBridge + xrdp + openbox + Firefox
   --cliproxy          Установить службу cliproxy-api
-  --proxybridge       Установить ProxyBridge (альтернатива redsocks, TCP+UDP прокси)
+  --gost              Установить gost (SOCKS5 прокси для всей сети, замена redsocks)
+  --proxybridge       Установить ProxyBridge (TCP+UDP прокси per-process)
   --9router           Установить службу 9router
   --xrdp              Установить xrdp-сервер (без Desktop Environment)
   --openbox           Настроить Openbox + tint2 как DE для xrdp
   --lxqt              Настроить LXQt как DE для xrdp (только Debian 13)
   --firefox           Установить Firefox ESR
   --brave             Установить Brave Browser
-  --redsocks          Настроить redsocks (SOCKS5 прокси, устаревший вариант)
   --amnezia           Установить AmneziaWG VPN-клиент
   --antigravity       Установить Google Antigravity IDE
   --claude-code       Установить Claude Code CLI (Anthropic)
@@ -152,8 +152,8 @@ ${BOLD}AIProxy Setup Installer${NC}
   # Установить основной набор автоматически:
   bash install.sh --all -y
 
-  # Только cliproxy-api и ProxyBridge:
-  bash install.sh --cliproxy --proxybridge -y
+  # Только gost + ProxyBridge:
+  bash install.sh --gost --proxybridge -y
 
   # AI-инструменты (Antigravity + Claude Code + Cockpit Tools):
   bash install.sh --antigravity --claude-code --cockpit-tools -y
@@ -214,14 +214,14 @@ ${NC}
 EOF
 
   ask_yn "Установить cliproxy-api (AI-прокси сервис)?" && DO_CLIPROXY=true || true
-  ask_yn "Установить ProxyBridge (TCP+UDP прокси, аналог redsocks)?" && DO_PROXYBRIDGE=true || true
+  ask_yn "Установить gost (SOCKS5 прокси для всей сети)?" && DO_GOST=true || true
+  ask_yn "Установить ProxyBridge (per-process TCP+UDP прокси)?" && DO_PROXYBRIDGE=true || true
   ask_yn "Установить 9router (Node.js роутер)?" && DO_9ROUTER=true || true
   ask_yn "Установить xrdp-сервер (RDP, порт 3389)?" && DO_XRDP=true || true
   ask_yn "Настроить Openbox + tint2 как рабочий стол?" && DO_OPENBOX=true || true
   ask_yn "Настроить LXQt как рабочий стол (Debian 13)?" && DO_LXQT=true || true
   ask_yn "Установить Firefox ESR?" && DO_FIREFOX=true || true
   ask_yn "Установить Brave Browser?" && DO_BRAVE=true || true
-  ask_yn "Настроить redsocks (SOCKS5 прокси, устаревший)?" && DO_REDSOCKS=true || true
   ask_yn "Установить AmneziaWG VPN-клиент?" && DO_AMNEZIA=true || true
 
   echo ""
@@ -235,6 +235,7 @@ EOF
   echo ""
   log_step "Выбранные компоненты"
   [ "$DO_CLIPROXY"       = "true" ] && log_info "✓ cliproxy-api"
+  [ "$DO_GOST"           = "true" ] && log_info "✓ gost"
   [ "$DO_PROXYBRIDGE"   = "true" ] && log_info "✓ ProxyBridge"
   [ "$DO_9ROUTER"        = "true" ] && log_info "✓ 9router"
   [ "$DO_XRDP"           = "true" ] && log_info "✓ xrdp-сервер"
@@ -242,7 +243,6 @@ EOF
   [ "$DO_LXQT"          = "true" ] && log_info "✓ LXQt"
   [ "$DO_FIREFOX"        = "true" ] && log_info "✓ Firefox ESR"
   [ "$DO_BRAVE"          = "true" ] && log_info "✓ Brave Browser"
-  [ "$DO_REDSOCKS"       = "true" ] && log_info "✓ redsocks"
   [ "$DO_AMNEZIA"        = "true" ] && log_info "✓ AmneziaWG VPN"
   [ "$DO_ANTIGRAVITY"   = "true" ] && log_info "✓ Google Antigravity IDE"
   [ "$DO_CLAUDE_CODE"   = "true" ] && log_info "✓ Claude Code CLI"
@@ -250,18 +250,14 @@ EOF
   [ "$DO_COCKPIT_TOOLS" = "true" ] && log_info "✓ Cockpit Tools"
   [ "$DO_VSCODE"        = "true" ] && log_info "✓ Visual Studio Code"
 
-  # Предупреждение о конфликте redsocks и ProxyBridge
-  if [ "$DO_REDSOCKS" = "true" ] && [ "$DO_PROXYBRIDGE" = "true" ]; then
-    log_warn "⚠ Выбраны одновременно redsocks и ProxyBridge — оба управляют iptables и могут конфликтовать."
-    log_warn "  Рекомендуется использовать только один из них."
-    ask_yn "Продолжить несмотря на это?" || { log_warn "Отменено."; exit 0; }
-  fi
 
-  if [ "$DO_CLIPROXY" = "false" ] && [ "$DO_PROXYBRIDGE" = "false" ] && \
+
+  if [ "$DO_CLIPROXY" = "false" ] && [ "$DO_GOST" = "false" ] && \
+     [ "$DO_PROXYBRIDGE" = "false" ] && \
      [ "$DO_9ROUTER" = "false" ] && [ "$DO_XRDP" = "false" ] && \
      [ "$DO_OPENBOX" = "false" ] && [ "$DO_LXQT" = "false" ] && \
      [ "$DO_FIREFOX" = "false" ] && [ "$DO_BRAVE" = "false" ] && \
-     [ "$DO_REDSOCKS" = "false" ] && [ "$DO_AMNEZIA" = "false" ] && \
+     [ "$DO_AMNEZIA" = "false" ] && \
      [ "$DO_ANTIGRAVITY" = "false" ] && [ "$DO_CLAUDE_CODE" = "false" ] && \
      [ "$DO_CLAUDE_DESKTOP" = "false" ] && [ "$DO_COCKPIT_TOOLS" = "false" ] && \
      [ "$DO_VSCODE" = "false" ]; then
@@ -323,6 +319,11 @@ run_installations() {
     run_component_script "${scripts_dir}/install-cliproxy-api.sh"
   fi
 
+  if [ "$DO_GOST" = "true" ]; then
+    log_step "Установка gost"
+    run_component_script "${scripts_dir}/setup-gost.sh"
+  fi
+
   if [ "$DO_PROXYBRIDGE" = "true" ]; then
     log_step "Установка ProxyBridge"
     run_component_script "${scripts_dir}/install-proxybridge.sh"
@@ -358,10 +359,7 @@ run_installations() {
     run_component_script "${scripts_dir}/install-brave.sh"
   fi
 
-  if [ "$DO_REDSOCKS" = "true" ]; then
-    log_step "Установка redsocks"
-    run_component_script "${scripts_dir}/setup-redsocks.sh"
-  fi
+
 
   if [ "$DO_AMNEZIA" = "true" ]; then
     log_step "Установка AmneziaWG VPN-клиента"
@@ -406,6 +404,7 @@ ${NC}
 Установленные компоненты:
 EOF
   [ "$DO_CLIPROXY"     = "true" ] && echo -e "  ${GREEN}✓${NC} cliproxy-api  (http://localhost:8317)"
+  [ "$DO_GOST"         = "true" ] && echo -e "  ${GREEN}✓${NC} gost          (SOCKS5 на 0.0.0.0:1080, управление: ${INSTALL_DIR}/scripts/gost-toggle.sh)"
   if [ "$DO_PROXYBRIDGE" = "true" ]; then
     if /usr/local/bin/ProxyBridge --help &>/dev/null 2>&1; then
       echo -e "  ${GREEN}✓${NC} ProxyBridge   (ProxyBridge --help | ProxyBridgeGUI)"
@@ -419,7 +418,6 @@ EOF
   [ "$DO_LXQT"        = "true" ] && echo -e "  ${GREEN}✓${NC} LXQt"
   [ "$DO_FIREFOX"      = "true" ] && echo -e "  ${GREEN}✓${NC} Firefox ESR"
   [ "$DO_BRAVE"        = "true" ] && echo -e "  ${GREEN}✓${NC} Brave Browser"
-  [ "$DO_REDSOCKS"     = "true" ] && echo -e "  ${GREEN}✓${NC} redsocks      (управление: ${INSTALL_DIR}/scripts/proxy-toggle.sh)"
   [ "$DO_AMNEZIA"        = "true" ] && echo -e "  ${GREEN}✓${NC} AmneziaWG       (конфиг: /etc/amnezia/amneziawg/)"
   [ "$DO_ANTIGRAVITY"   = "true" ] && echo -e "  ${GREEN}✓${NC} Antigravity IDE  (команда: antigravity)"
   [ "$DO_CLAUDE_CODE"   = "true" ] && echo -e "  ${GREEN}✓${NC} Claude Code      (команда: claude)"
@@ -430,8 +428,8 @@ EOF
   cat <<EOF
 
 ${BOLD}Полезные команды:${NC}
-  ${INSTALL_DIR}/scripts/proxy-toggle.sh set IP PORT USER PASS [LOCAL_PORT] — задать/обновить прокси
-  ${INSTALL_DIR}/scripts/proxy-toggle.sh on|off|status                      — включение/выключение/статус
+  ${INSTALL_DIR}/scripts/gost-toggle.sh set IP PORT USER PASS — задать upstream прокси
+  ${INSTALL_DIR}/scripts/gost-toggle.sh on|off|status         — включение/выключение/статус
 
   ${INSTALL_DIR}/scripts/setup-amnezia-connection.sh /path/to/amnezia.conf  — настроить VPN-подключение
 
@@ -467,9 +465,7 @@ main() {
 
   if [ "$NON_INTERACTIVE" = "false" ]; then
     interactive_menu
-  elif [ "$DO_REDSOCKS" = "true" ] && [ "$DO_PROXYBRIDGE" = "true" ]; then
-    log_warn "⚠ Выбраны одновременно --redsocks и --proxybridge — оба управляют iptables и могут конфликтовать."
-    log_warn "  Рекомендуется использовать только один из них."
+
   fi
 
   run_installations

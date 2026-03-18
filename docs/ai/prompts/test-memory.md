@@ -19,7 +19,7 @@ wget -O- https://raw.githubusercontent.com/rsyuzyov/aiproxy/master/install.sh | 
 - В контейнере запусти команду
 
 ```bash
-wget -O- https://raw.githubusercontent.com/rsyuzyov/aiproxy/master/install.sh | bash -s -- --cliproxy --9router --redsocks -y
+wget -O- https://raw.githubusercontent.com/rsyuzyov/aiproxy/master/install.sh | bash -s -- --cliproxy --9router --gost -y
 ```
 
 Отследи, сколько места, памяти и cpu понадобится в процессе установки, запиши в readme

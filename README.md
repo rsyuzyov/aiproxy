@@ -1,6 +1,6 @@
 # AIProxy Setup
 
-Набор скриптов для развертывания OpenAI-совместимых прокси. Создавались и проверялись на Debian 12.
+Набор скриптов для развертывания OpenAI-совместимых прокси. Создавались и проверялись на Debian 13.
 
 ## Что включает
 
@@ -9,8 +9,8 @@
 | **cliproxy-api**    | AI-прокси сервер с поддержкой OpenAI/Gemini/Claude                   |
 | **9router**         | Ещё один AI-прокси сервер                                            |
 | **Cockpit Tools**   | Менеджер аккаунтов AI IDE: Antigravity, Copilot, Windsurf, Cursor... |
-| **ProxyBridge**     | Перенаправление TCP/UDP трафика через SOCKS5/HTTP прокси             |
-| **redsocks**        | Перенаправление TCP-трафика через SOCKS5 прокси                      |
+| **gost**            | SOCKS5 прокси для всей сети (замена redsocks)                        |
+| **ProxyBridge**     | Перенаправление TCP/UDP трафика per-process через SOCKS5/HTTP прокси |
 | **AmneziaWG**       | Альтернатива прокси для доступа к зарубежным провайдерам             |
 | **xrdp + openbox**  | RDP-доступ к рабочему столу                                          |
 | **Firefox ESR**     | Браузер                                                              |
@@ -21,7 +21,7 @@
 | **Antigravity IDE** | Google AI IDE на базе VS Code с Gemini                               |
 
 - Минимальный набор для установки — `cliproxy-api`.
-- Для работы с claude, openai и другими провайдерами можно установить **ProxyBridge** и арендовать прокси на https://px6.me (https://proxy6.net)
+- Для работы с claude, openai и другими провайдерами можно установить **gost** (прокси для всей сети) и/или **ProxyBridge** (per-process прокси) и арендовать прокси на https://px6.me (https://proxy6.net)
 - Для активации учётных записей (google, aws) и прохождения OAuth через прокси или туннель можно поставить браузер+xrdp и заходить по RDP на рабочий стол.
 
 ## Требования
@@ -43,7 +43,7 @@
 wget -O- https://raw.githubusercontent.com/rsyuzyov/aiproxy/master/install.sh | bash -s -- --all -y
 ```
 
-`--all` устанавливает: **cliproxy-api + ProxyBridge + xrdp + Firefox ESR**
+`--all` устанавливает: **cliproxy-api + 9router + gost + ProxyBridge + xrdp + openbox + Firefox ESR**
 
 ### Или: клонировать и запустить
 
@@ -66,44 +66,43 @@ bash install.sh
 ### Неинтерактивный режим (для автоматизации)
 
 ```bash
-# Установить основной набор: cliproxy-api + ProxyBridge + xrdp + Firefox
+# Установить основной набор: cliproxy-api + 9router + gost + ProxyBridge + xrdp + Firefox
 bash install.sh --all -y
 
-# Только cliproxy-api и ProxyBridge
-bash install.sh --cliproxy --proxybridge -y
+# Только gost + ProxyBridge (прокси для сети + per-process правила)
+bash install.sh --gost --proxybridge -y
 
 # Только cliproxy-api и xrdp
 bash install.sh --cliproxy --xrdp -y
 
 # AI-инструменты: Antigravity IDE + Claude Code + Cockpit Tools
 bash install.sh --antigravity --claude-code --cockpit-tools -y
-
-# С настройкой redsocks (устаревший вариант)
-bash install.sh --cliproxy --redsocks -y
 ```
 
 ### Параметры командной строки
 
-| Параметр                   | Описание                                                    |
-| -------------------------- | ----------------------------------------------------------- |
-| `--all`                    | Основной набор: cliproxy-api + ProxyBridge + xrdp + Firefox |
-| `--cliproxy`               | Установить cliproxy-api                                     |
-| `--proxybridge`            | Установить ProxyBridge (TCP+UDP прокси, аналог redsocks)    |
-| `--9router`                | Установить 9router                                          |
-| `--xrdp`                   | Настроить xrdp + openbox                                    |
-| `--firefox`                | Установить Firefox ESR                                      |
-| `--brave`                  | Установить Brave Browser                                    |
-| `--redsocks`               | Настроить redsocks (устаревший, только TCP)                 |
-| `--amnezia`                | Установить AmneziaWG VPN-клиент                             |
-| `--antigravity`            | Установить Google Antigravity IDE                           |
-| `--claude-code`            | Установить Claude Code CLI                                  |
-| `--claude-desktop`         | Установить Claude Desktop (неофициальный Linux-порт)        |
-| `--cockpit-tools`          | Установить Cockpit Tools (менеджер аккаунтов AI IDE)        |
-| `--vscode`                 | Установить Visual Studio Code                               |
-| `-y` / `--non-interactive` | Неинтерактивный режим                                       |
-| `--help`                   | Показать справку                                            |
+| Параметр                   | Описание                                                                       |
+| -------------------------- | ------------------------------------------------------------------------------ |
+| `--all`                    | Основной набор: cliproxy + 9router + gost + ProxyBridge + xrdp + Firefox       |
+| `--cliproxy`               | Установить cliproxy-api                                                        |
+| `--gost`                   | Установить gost (SOCKS5 прокси для всей сети)                                  |
+| `--proxybridge`            | Установить ProxyBridge (per-process TCP+UDP прокси)                            |
+| `--9router`                | Установить 9router                                                             |
+| `--xrdp`                   | Настроить xrdp + openbox                                                       |
+| `--openbox`                | Настроить Openbox + tint2 как DE                                               |
+| `--lxqt`                   | Настроить LXQt как DE (Debian 13)                                              |
+| `--firefox`                | Установить Firefox ESR                                                         |
+| `--brave`                  | Установить Brave Browser                                                       |
+| `--amnezia`                | Установить AmneziaWG VPN-клиент                                                |
+| `--antigravity`            | Установить Google Antigravity IDE                                              |
+| `--claude-code`            | Установить Claude Code CLI                                                     |
+| `--claude-desktop`         | Установить Claude Desktop (неофициальный Linux-порт)                           |
+| `--cockpit-tools`          | Установить Cockpit Tools (менеджер аккаунтов AI IDE)                           |
+| `--vscode`                 | Установить Visual Studio Code                                                  |
+| `-y` / `--non-interactive` | Неинтерактивный режим                                                          |
+| `--help`                   | Показать справку                                                               |
 
-> ⚠ **redsocks и ProxyBridge не следует использовать одновременно** — оба управляют iptables и могут конфликтовать. Рекомендуется ProxyBridge как более современная альтернатива.
+> 💡 **gost + ProxyBridge** — рекомендуемая связка. Gost обслуживает всю сеть (SOCKS5 без пароля → upstream с паролем), ProxyBridge выбирает приложения для проксирования.
 
 ## Отдельные скрипты
 
@@ -177,30 +176,30 @@ bash ~/aiproxy/scripts/install-firefox.sh
 bash ~/aiproxy/scripts/install-brave.sh
 ```
 
-### Настройка redsocks (устаревший)
-
-> Рекомендуется использовать **ProxyBridge** вместо redsocks — он поддерживает UDP, имеет GUI и гибкие правила per-process.
+### Настройка gost
 
 ```bash
-bash ~/aiproxy/scripts/setup-redsocks.sh <ip> <port> <login> <password> [local_port]
-
-# Пример:
-bash ~/aiproxy/scripts/setup-redsocks.sh 1.2.3.4 1080 myuser mypassword
+bash ~/aiproxy/scripts/setup-gost.sh
 ```
+
+- Устанавливает бинарник [gost](https://github.com/go-gost/gost) через официальный скрипт
+- Запускает SOCKS5 прокси на `0.0.0.0:1080` без авторизации (direct-режим)
+- Другие хосты в LAN могут использовать этот прокси
+- Не требует зависимостей (статический бинарник Go)
 
 Управление после установки:
 
 ```bash
-proxy-toggle.sh on      # включить (весь TCP через SOCKS5)
-proxy-toggle.sh off     # выключить (прямое соединение)
-proxy-toggle.sh status  # статус
+gost-toggle.sh set 1.2.3.4 1080 myuser mypassword  # задать upstream прокси
+gost-toggle.sh on       # включить upstream (трафик через внешний прокси)
+gost-toggle.sh off      # отключить upstream (direct-режим)
+gost-toggle.sh status   # текущий статус
 ```
 
-| Статус   | Описание                                      |
+| Режим    | Описание                                      |
 | -------- | --------------------------------------------- |
-| `ACTIVE` | redsocks запущен, трафик идёт через прокси    |
-| `BYPASS` | redsocks остановлен, прямое соединение        |
-| `BROKEN` | Несогласованное состояние (нужна диагностика) |
+| `DIRECT` | gost работает напрямую, без upstream          |
+| `PROXY`  | трафик идёт через внешний SOCKS5 прокси       |
 
 ### Установка Google Antigravity IDE
 
@@ -306,6 +305,14 @@ awg show                               # активные туннели и тр
 aiproxy/
 ├── install.sh                        # Мастер-установщик
 ├── README.md
+├── configs/
+│   ├── gost/
+│   │   └── config-direct.yaml        # Дефолтный конфиг gost (direct-режим)
+│   ├── proxybridge/
+│   │   └── config.ini                # Конфиг ProxyBridge
+│   └── systemd/
+│       ├── gost.service              # Systemd-юнит gost
+│       └── proxybridge.service       # Systemd-юнит ProxyBridge
 └── scripts/
     ├── install-cliproxy-api.sh        # Установка cliproxy-api
     ├── install-proxybridge.sh         # Установка ProxyBridge
@@ -318,10 +325,10 @@ aiproxy/
     ├── install-claude-desktop.sh      # Установка Claude Desktop (Linux-порт)
     ├── install-cockpit-tools.sh       # Установка Cockpit Tools
     ├── install-vscode.sh              # Установка Visual Studio Code
+    ├── setup-gost.sh                  # Установка gost
+    ├── gost-toggle.sh                 # Управление gost прокси
     ├── setup-xrdp.sh                  # Настройка RDP + openbox
-    ├── setup-redsocks.sh              # Настройка redsocks
-    ├── setup-amnezia-connection.sh    # Настройка VPN-подключения Amnezia
-    └── proxy-toggle.sh                # Управление redsocks прокси
+    └── setup-amnezia-connection.sh    # Настройка VPN-подключения Amnezia
 ```
 
 ## После установки
@@ -341,6 +348,11 @@ aiproxy/
 systemctl status cliproxy-api
 systemctl restart cliproxy-api
 journalctl -u cliproxy-api -f
+
+# gost
+systemctl status gost
+systemctl restart gost
+journalctl -u gost -f
 
 # 9router
 systemctl status 9router

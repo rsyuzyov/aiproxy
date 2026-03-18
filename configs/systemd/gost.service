@@ -1,0 +1,12 @@
+[Unit]
+Description=GOST Proxy
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/gost -C /etc/gost/config.yaml
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
