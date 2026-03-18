@@ -101,26 +101,37 @@ EOF
 set_lxqt_window_manager() {
   log_info "Устанавливаю openbox как оконный менеджер LXQt..."
 
-  # LXQt хранит WM в своём конфиге сессии
-  local lxqt_conf_dir="/etc/xdg/lxqt"
-  mkdir -p "${lxqt_conf_dir}"
-
-  # Глобальный конфиг сессии LXQt — window_manager
-  local session_conf="${lxqt_conf_dir}/session.conf"
-  if [ ! -f "${session_conf}" ]; then
-    cat > "${session_conf}" <<'EOF'
+  local session_content
+  session_content=$(cat <<'EOF'
 [General]
 window_manager=openbox
 EOF
-  else
-    if grep -q '^window_manager=' "${session_conf}"; then
-      sed -i 's/^window_manager=.*/window_manager=openbox/' "${session_conf}"
-    else
-      echo "window_manager=openbox" >> "${session_conf}"
-    fi
-  fi
+  )
+
+  # Глобальный конфиг (для всех пользователей, fallback)
+  local global_dir="/etc/xdg/lxqt"
+  mkdir -p "${global_dir}"
+  _write_session_conf "${global_dir}/session.conf" "${session_content}"
+
+  # Пользовательский конфиг для root (подавляет диалог "выберите WM")
+  local user_dir="/root/.config/lxqt"
+  mkdir -p "${user_dir}"
+  _write_session_conf "${user_dir}/session.conf" "${session_content}"
 
   log_success "Оконный менеджер LXQt → openbox"
+}
+
+_write_session_conf() {
+  local conf_file="$1" content="$2"
+  if [ ! -f "${conf_file}" ]; then
+    echo "${content}" > "${conf_file}"
+  else
+    if grep -q '^window_manager=' "${conf_file}"; then
+      sed -i 's/^window_manager=.*/window_manager=openbox/' "${conf_file}"
+    else
+      echo "window_manager=openbox" >> "${conf_file}"
+    fi
+  fi
 }
 
 restart_xrdp() {
