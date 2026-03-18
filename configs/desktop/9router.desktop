@@ -5,5 +5,5 @@ Comment=Панель управления 9Router
 Exec=firefox http://127.0.0.1:20128
 Icon=network-server
 Terminal=false
-Categories=Network;
+Categories=X-AIProxy;Network;
 Keywords=router;9router;proxy;

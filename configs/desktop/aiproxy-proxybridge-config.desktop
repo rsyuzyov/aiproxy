@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=ProxyBridge Config
+Comment=Редактировать конфигурацию ProxyBridge (/etc/proxybridge/config.ini)
+Exec=sh -c 'if command -v featherpad >/dev/null; then featherpad /etc/proxybridge/config.ini; else xdg-open /etc/proxybridge/config.ini; fi'
+Icon=text-x-generic
+Terminal=false
+Categories=X-AIProxy;
+Keywords=proxybridge;config;proxy;

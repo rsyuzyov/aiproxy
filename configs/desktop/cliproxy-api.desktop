@@ -5,5 +5,5 @@ Comment=Панель управления CLIProxy API
 Exec=firefox http://127.0.0.1:8317/management.html
 Icon=network-server
 Terminal=false
-Categories=Network;
+Categories=X-AIProxy;Network;
 Keywords=proxy;cliproxy;api;

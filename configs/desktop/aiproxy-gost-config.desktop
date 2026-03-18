@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Gost Config
+Comment=Редактировать конфигурацию gost (/etc/gost/config.yaml)
+Exec=sh -c 'if command -v featherpad >/dev/null; then featherpad /etc/gost/config.yaml; else xdg-open /etc/gost/config.yaml; fi'
+Icon=text-x-generic
+Terminal=false
+Categories=X-AIProxy;
+Keywords=gost;config;proxy;

@@ -8,15 +8,15 @@ description: E2E тест установки AIProxy в LXC контейнере
 
 ## Параметры (подставь перед запуском)
 
-| Параметр     | Значение по умолчанию                                     | Описание                  |
-| ------------ | --------------------------------------------------------- | ------------------------- |
-| `PVE_HOST`   | `srv-hv1.ag.local`                                        | Proxmox-сервер (SSH)      |
-| `CT_ID`      | `131`                                                     | ID контейнера             |
-| `ZFS_POOL`   | `pool2`                                                   | ZFS-пул                   |
-| `SNAPSHOT`   | `s20260318`                                               | Имя ZFS-снимка            |
-| `BRANCH`     | `gost`                                                    | Ветка git-репо            |
-| `COMPONENTS` | `--lxqt --xrdp --gost --proxybridge --cliproxy --firefox` | Компоненты для install.sh |
-| `TIMEOUT`    | `6m`                                                      | Тайм-аут всего теста      |
+| Параметр     | Значение по умолчанию                                               | Описание                  |
+| ------------ | ------------------------------------------------------------------- | ------------------------- |
+| `PVE_HOST`   | `srv-hv1.ag.local`                                                  | Proxmox-сервер (SSH)      |
+| `CT_ID`      | `131`                                                               | ID контейнера             |
+| `ZFS_POOL`   | `pool2`                                                             | ZFS-пул                   |
+| `SNAPSHOT`   | `s20260318`                                                         | Имя ZFS-снимка            |
+| `BRANCH`     | `gost`                                                              | Ветка git-репо            |
+| `COMPONENTS` | `--lxqt --xrdp --gost --proxybridge --cliproxy --9router --firefox` | Компоненты для install.sh |
+| `TIMEOUT`    | `5m`                                                                | Тайм-аут всего теста      |
 
 ## Шаги
 
@@ -54,8 +54,6 @@ pct exec <CT_ID> -- bash -c "cd ~/aiproxy && timeout <TIMEOUT> bash install.sh <
 
 Дождаться завершения. Следить за ошибками в выводе. Если exit code = 124, значит тайм-аут сработал — установка зависла.
 
-Установка не должна идти долье 3 минут! При превышении прерви установку и начни расследование причин.
-
 ### 5. Проверки после установки
 
 #### Проверка служб
@@ -64,6 +62,7 @@ pct exec <CT_ID> -- bash -c "cd ~/aiproxy && timeout <TIMEOUT> bash install.sh <
 pct exec <CT_ID> -- systemctl status gost
 pct exec <CT_ID> -- systemctl status proxybridge
 pct exec <CT_ID> -- systemctl status cliproxy-api
+pct exec <CT_ID> -- systemctl status 9router
 pct exec <CT_ID> -- systemctl status xrdp
 ```
 

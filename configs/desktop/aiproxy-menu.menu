@@ -1,0 +1,12 @@
+<!DOCTYPE Menu PUBLIC "-//freedesktop//DTD Menu 1.0//EN"
+ "http://www.freedesktop.org/standards/menu-spec/1.0/menu.dtd">
+<Menu>
+	<Name>Applications</Name>
+	<Menu>
+		<Name>AIProxy</Name>
+		<Directory>aiproxy.directory</Directory>
+		<Include>
+			<Category>X-AIProxy</Category>
+		</Include>
+	</Menu>
+</Menu>

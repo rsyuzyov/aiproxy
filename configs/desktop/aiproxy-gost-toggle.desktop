@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Gost Toggle
+Comment=Включение/выключение/статус upstream прокси gost
+Exec=qterminal -e bash -c '$HOME/aiproxy/scripts/gost-toggle.sh status; echo; echo "Команды: on | off | set IP PORT USER PASS"; echo "Пример: $HOME/aiproxy/scripts/gost-toggle.sh set 1.2.3.4 1080 user pass"; echo; read -p "Нажмите Enter..."'
+Icon=network-transmit-receive
+Terminal=false
+Categories=X-AIProxy;
+Keywords=gost;toggle;proxy;

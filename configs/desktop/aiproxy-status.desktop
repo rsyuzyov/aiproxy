@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Статус служб
+Comment=Показать статус всех AIProxy служб
+Exec=qterminal -e bash -c 'echo "=== Статус AIProxy служб ==="; echo; for svc in gost proxybridge cliproxy-api xrdp; do systemctl is-active --quiet $svc 2>/dev/null && printf "\033[32m● %s\033[0m\n" "$svc" || printf "\033[31m○ %s\033[0m\n" "$svc"; done; echo; systemctl status --no-pager gost proxybridge cliproxy-api xrdp 2>&1; echo; read -p "Нажмите Enter..."'
+Icon=dialog-information
+Terminal=false
+Categories=X-AIProxy;
+Keywords=status;service;

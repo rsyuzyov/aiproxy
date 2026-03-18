@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Мастер установки
+Comment=Запустить AIProxy Setup Installer для установки/обновления компонентов
+Exec=qterminal -e bash -c 'cd $HOME/aiproxy && bash install.sh; echo; read -p "Нажмите Enter..."'
+Icon=system-software-install
+Terminal=false
+Categories=X-AIProxy;
+Keywords=install;setup;wizard;

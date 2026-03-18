@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Логи служб
+Comment=Просмотр логов AIProxy служб в реальном времени
+Exec=qterminal -e bash -c 'journalctl -f -u gost -u proxybridge -u cliproxy-api --no-hostname'
+Icon=utilities-log-viewer
+Terminal=false
+Categories=X-AIProxy;
+Keywords=logs;journal;debug;

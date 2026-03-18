@@ -161,6 +161,35 @@ EOF
   fi
 }
 
+install_ai_menu() {
+  local configs_dir
+  configs_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/../configs" && pwd)"
+  local desktop_dir="${configs_dir}/desktop"
+
+  log_info "Устанавливаю подменю AIProxy..."
+
+  # .directory файл для категории
+  if [ -f "${desktop_dir}/aiproxy.directory" ]; then
+    sed 's/\r$//' "${desktop_dir}/aiproxy.directory" > /usr/share/desktop-directories/aiproxy.directory
+  fi
+
+  # XDG merge-menu для LXQt
+  mkdir -p /etc/xdg/menus/applications-merged
+  if [ -f "${desktop_dir}/aiproxy-menu.menu" ]; then
+    sed 's/\r$//' "${desktop_dir}/aiproxy-menu.menu" > /etc/xdg/menus/applications-merged/aiproxy-menu.menu
+  fi
+
+  # Desktop-ярлыки AIProxy (aiproxy-*.desktop)
+  for f in "${desktop_dir}"/aiproxy-*.desktop; do
+    [ -f "$f" ] || continue
+    local basename
+    basename="$(basename "$f")"
+    sed 's/\r$//' "$f" > "/usr/share/applications/${basename}"
+  done
+
+  log_success "Подменю AIProxy установлено ($(ls -1 "${desktop_dir}"/aiproxy-*.desktop 2>/dev/null | wc -l) ярлыков)"
+}
+
 # =============================================================================
 # MAIN
 # =============================================================================
@@ -172,6 +201,7 @@ main() {
   configure_startwm
   configure_xresources
   configure_bash_completion
+  install_ai_menu
   set_lxqt_window_manager
   restart_xrdp
 
