@@ -447,6 +447,8 @@ EOF
 # =============================================================================
 main() {
   require_root
+  # pct exec и подобные среды могут не включать /usr/local/bin в PATH
+  export PATH="/usr/local/sbin:/usr/local/bin:${PATH}"
   export DEBIAN_FRONTEND=noninteractive
   ensure_locales
 
