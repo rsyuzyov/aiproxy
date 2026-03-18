@@ -73,14 +73,14 @@ export DISPLAY=${DISPLAY:-:10}
 export DESKTOP_SESSION=lxqt
 export XDG_CURRENT_DESKTOP=LXQt
 
-# Раскладка US/RU, Alt+Shift — с задержкой чтобы xrdpkeyb не перебил
-(sleep 2 && setxkbmap -layout us,ru -option grp:alt_shift_toggle) &
+# Раскладка US/RU, Alt+Shift — задержка чтобы xrdpkeyb не перебил
+(sleep 3 && setxkbmap -layout us,ru -option grp:alt_shift_toggle) &
 
-exec dbus-launch --exit-with-session lxqt-session
+exec dbus-launch --exit-with-session startlxqt
 EOF
 
   chmod +x "/etc/xrdp/startwm.sh"
-  log_success "startwm.sh → lxqt-session"
+  log_success "startwm.sh → startlxqt"
 }
 
 configure_xresources() {

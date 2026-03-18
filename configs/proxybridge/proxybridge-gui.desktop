@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Proxy Bridge
+Comment=Настройка ProxyBridge (остановит демон на время работы GUI)
+Exec=/usr/local/lib/proxybridge/gui-wrapper.sh
+Icon=network-server
+Terminal=false
+Categories=Network;Settings;
+Keywords=proxy;proxybridge;socks;
