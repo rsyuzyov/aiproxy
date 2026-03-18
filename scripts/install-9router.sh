@@ -17,6 +17,7 @@ log_success() { echo -e "${GREEN}[9router] OK:${NC} $*"; }
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SYSTEMD_TEMPLATE="${SCRIPT_DIR}/../configs/systemd/9router.service"
 SYSTEMD_DIR="${SCRIPT_DIR}/../configs/systemd"
+DESKTOP_DIR="${SCRIPT_DIR}/../configs/desktop"
 SERVICE_NAME="9router"
 NODE_VERSION="20"  # LTS версия Node.js
 
@@ -132,6 +133,13 @@ main() {
     log_info "Веб-интерфейс: http://localhost:20128"
   else
     log_warn "Служба не запустилась. Проверьте: journalctl -u ${SERVICE_NAME} -n 20"
+  fi
+
+  # Ярлык в меню приложений
+  local desktop_src="${DESKTOP_DIR}/9router.desktop"
+  if [ -f "${desktop_src}" ] && [ -d /usr/share/applications ]; then
+    sed 's/\r$//' "${desktop_src}" > /usr/share/applications/9router.desktop
+    log_success "Ярлык добавлен в меню: 9Router"
   fi
 }
 

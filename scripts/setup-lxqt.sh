@@ -128,6 +128,28 @@ restart_xrdp() {
   systemctl restart xrdp xrdp-sesman 2>/dev/null || true
 }
 
+configure_bash_completion() {
+  log_info "Настраиваю bash-completion для tab-дополнения..."
+
+  local bashrc="/root/.bashrc"
+  if ! grep -q 'bash_completion' "$bashrc" 2>/dev/null; then
+    cat >> "$bashrc" << 'EOF'
+
+# Bash completion (tab-дополнение)
+if ! shopt -oq posix; then
+  if [ -f /usr/share/bash-completion/bash_completion ]; then
+    . /usr/share/bash-completion/bash_completion
+  elif [ -f /etc/bash_completion ]; then
+    . /etc/bash_completion
+  fi
+fi
+EOF
+    log_success "bash-completion добавлен в ~/.bashrc"
+  else
+    log_info "bash-completion уже подключён в ~/.bashrc"
+  fi
+}
+
 # =============================================================================
 # MAIN
 # =============================================================================
@@ -138,6 +160,7 @@ main() {
   install_packages
   configure_startwm
   configure_xresources
+  configure_bash_completion
   set_lxqt_window_manager
   restart_xrdp
 

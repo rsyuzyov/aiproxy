@@ -15,6 +15,7 @@ PROXY_USER=""
 PROXY_PASS=""
 DNS_VIA_PROXY=""
 RULE_ARGS=""
+HAS_PROXY_RULES=false
 
 if [ -f "${CONFIG}" ]; then
   section=""
@@ -26,7 +27,7 @@ if [ -f "${CONFIG}" ]; then
     # Определяем секцию
     if [[ "$line" == "[SETTINGS]" ]]; then section="settings"; continue; fi
     if [[ "$line" == "[RULES]" ]]; then section="rules"; continue; fi
-    [[ "$line" == \[* ]] && section=""; continue
+    if [[ "$line" == \[* ]]; then section=""; continue; fi
 
     if [[ "$section" == "settings" ]]; then
       key="${line%%=*}"
@@ -53,14 +54,17 @@ if [ -f "${CONFIG}" ]; then
       hosts="${r_hosts:-*}"
       ports="${r_ports:-*}"
 
+      # Отслеживаем, есть ли хотя бы одно правило PROXY
+      [[ "$action" == "PROXY" ]] && HAS_PROXY_RULES=true
+
       RULE_ARGS="${RULE_ARGS} --rule ${proc}:${hosts}:${ports}:${proto}:${action}"
     fi
   done < "${CONFIG}"
 fi
 
-# --- Собираем --proxy ---
+# --- Собираем --proxy (только если есть правила PROXY) ---
 PROXY_ARG=""
-if [ -n "${PROXY_IP}" ] && [ -n "${PROXY_PORT}" ]; then
+if [ "${HAS_PROXY_RULES}" = "true" ] && [ -n "${PROXY_IP}" ] && [ -n "${PROXY_PORT}" ]; then
   ptype="${PROXY_TYPES[$PROXY_TYPE_NUM]:-socks5}"
   PROXY_ARG="--proxy ${ptype}://${PROXY_IP}:${PROXY_PORT}"
   if [ -n "${PROXY_USER}" ] && [ -n "${PROXY_PASS}" ]; then
@@ -68,9 +72,9 @@ if [ -n "${PROXY_IP}" ] && [ -n "${PROXY_PORT}" ]; then
   fi
 fi
 
-# --- Собираем --dns-via-proxy ---
+# --- Собираем --dns-via-proxy (только если есть прокси) ---
 DNS_ARG=""
-if [ -n "${DNS_VIA_PROXY}" ]; then
+if [ "${HAS_PROXY_RULES}" = "true" ] && [ -n "${DNS_VIA_PROXY}" ]; then
   if [[ "${DNS_VIA_PROXY}" == "1" ]]; then
     DNS_ARG="--dns-via-proxy true"
   else

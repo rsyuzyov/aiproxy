@@ -24,6 +24,7 @@ GITHUB_API="https://api.github.com/repos/${GITHUB_REPO}/releases/latest"
 # Вспомогательные скрипты храним в репозитории
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SYSTEMD_DIR="${SCRIPT_DIR}/../configs/systemd"
+DESKTOP_DIR="${SCRIPT_DIR}/../configs/desktop"
 SELFUPDATE_BIN="${SCRIPT_DIR}/cliproxy-api-selfupdate.sh"
 ROLLBACK_BIN="${SCRIPT_DIR}/cliproxy-api-rollback.sh"
 
@@ -409,10 +410,17 @@ main() {
 
   if systemctl is-active --quiet "${SERVICE_NAME}.service"; then
     log_success "Служба ${SERVICE_NAME} запущена!"
-    log_info "Панель управления: http://localhost:8317"
+    log_info "Панель управления: http://localhost:8317/management.html"
     log_info "Конфигурация: ${WORKDIR}/config.yaml"
   else
     log_warn "Служба не запустилась. Проверьте: journalctl -u ${SERVICE_NAME} -n 20"
+  fi
+
+  # Ярлык в меню приложений
+  local desktop_src="${DESKTOP_DIR}/cliproxy-api.desktop"
+  if [ -f "${desktop_src}" ] && [ -d /usr/share/applications ]; then
+    sed 's/\r$//' "${desktop_src}" > /usr/share/applications/cliproxy-api.desktop
+    log_success "Ярлык добавлен в меню: CLIProxy API"
   fi
 }
 
