@@ -447,6 +447,7 @@ EOF
 # =============================================================================
 main() {
   require_root
+  export DEBIAN_FRONTEND=noninteractive
   ensure_locales
 
   # Если запускаем через pipe (wget|bash), нет аргументов → скачать и перезапустить

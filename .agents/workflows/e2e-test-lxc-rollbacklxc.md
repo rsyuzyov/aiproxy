@@ -15,7 +15,8 @@ description: E2E тест установки AIProxy в LXC контейнере
 | `ZFS_POOL`   | `pool2`                                            | ZFS-пул                   |
 | `SNAPSHOT`   | `s20260318`                                        | Имя ZFS-снимка            |
 | `BRANCH`     | `lxqt`                                             | Ветка git-репо            |
-| `COMPONENTS` | `--lxqt --xrdp --proxybridge --cliproxy --firefox` | Компоненты для install.sh |
+| `COMPONENTS` | `--gost --lxqt --xrdp --proxybridge --cliproxy --firefox` | Компоненты для install.sh |
+| `TIMEOUT`    | `15m`                                                      | Тайм-аут всего теста      |
 
 ## Шаги
 
@@ -37,42 +38,44 @@ pct start <CT_ID>
 
 ### 3. Зайти в контейнер, клонировать репо
 
+Все последующие команды (шаги 3–5) выполняются **внутри контейнера** через `pct exec`, а **не** через `pct enter` (он создаёт интерактивную сессию и может зависнуть).
+
 ```bash
-pct enter <CT_ID>
-git clone https://github.com/rsyuzyov/aiproxy.git ~/aiproxy
-cd ~/aiproxy
-git checkout <BRANCH>
+pct exec <CT_ID> -- bash -c "git clone https://github.com/rsyuzyov/aiproxy.git ~/aiproxy && cd ~/aiproxy && git checkout <BRANCH>"
 ```
 
 ### 4. Запустить установку
 
+Установка ограничена тайм-аутом (`<TIMEOUT>`). Если превышен — тест считается проваленным.
+
 ```bash
-bash install.sh <COMPONENTS> -y
+pct exec <CT_ID> -- bash -c "cd ~/aiproxy && timeout <TIMEOUT> bash install.sh <COMPONENTS> -y"
 ```
 
-Дождаться завершения. Следить за ошибками в выводе.
+Дождаться завершения. Следить за ошибками в выводе. Если exit code = 124, значит тайм-аут сработал — установка зависла.
 
 ### 5. Проверки после установки
 
 #### Проверка служб
 
 ```bash
-systemctl status proxybridge
-systemctl status cliproxy-api
-systemctl status xrdp
+pct exec <CT_ID> -- systemctl status gost
+pct exec <CT_ID> -- systemctl status proxybridge
+pct exec <CT_ID> -- systemctl status cliproxy-api
+pct exec <CT_ID> -- systemctl status xrdp
 ```
 
 #### Проверка ProxyBridge
 
 ```bash
 # Должен показать config.ini
-cat /etc/proxybridge/config.ini
+pct exec <CT_ID> -- cat /etc/proxybridge/config.ini
 
 # Проверить что gen-args.sh формирует правильные аргументы
-source /usr/local/lib/proxybridge/gen-args.sh && echo "ARGS: $PROXYBRIDGE_ARGS"
+pct exec <CT_ID> -- bash -c "source /usr/local/lib/proxybridge/gen-args.sh && echo ARGS: \$PROXYBRIDGE_ARGS"
 
 # Проверить что трафик ходит (DIRECT режим)
-curl -sI https://ya.ru | head -3
+pct exec <CT_ID> -- curl -sI https://ya.ru | head -3
 ```
 
 #### Проверка RDP
@@ -83,6 +86,7 @@ curl -sI https://ya.ru | head -3
 #### Проверка GUI-обёртки
 
 ```bash
-ls -la /usr/local/lib/proxybridge/gui-wrapper.sh
-ls -la /usr/share/applications/proxybridge-gui.desktop
+pct exec <CT_ID> -- ls -la /usr/local/lib/proxybridge/gui-wrapper.sh
+pct exec <CT_ID> -- ls -la /usr/share/applications/proxybridge-gui.desktop
 ```
+
