@@ -14,7 +14,7 @@ description: E2E тест установки AIProxy в LXC контейнере
 | `CT_ID`      | `131`                                                     | ID контейнера             |
 | `ZFS_POOL`   | `pool2`                                                   | ZFS-пул                   |
 | `SNAPSHOT`   | `s20260318`                                               | Имя ZFS-снимка            |
-| `BRANCH`     | `lxqt`                                                    | Ветка git-репо            |
+| `BRANCH`     | `gost`                                                    | Ветка git-репо            |
 | `COMPONENTS` | `--lxqt --xrdp --gost --proxybridge --cliproxy --firefox` | Компоненты для install.sh |
 | `TIMEOUT`    | `6m`                                                      | Тайм-аут всего теста      |
 
