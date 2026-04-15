@@ -179,15 +179,26 @@ install_ai_menu() {
     sed 's/\r$//' "${desktop_dir}/aiproxy-menu.menu" > /etc/xdg/menus/applications-merged/aiproxy-menu.menu
   fi
 
-  # Desktop-ярлыки AIProxy (aiproxy-*.desktop)
+  # Desktop-ярлыки AIProxy (aiproxy-*.desktop).
+  # Ярлыки со значением TryExec=, указывающим на отсутствующий бинарник,
+  # пропускаются — так меню не засоряется пунктами для невыбранных компонентов.
+  local installed=0 skipped=0
   for f in "${desktop_dir}"/aiproxy-*.desktop; do
     [ -f "$f" ] || continue
-    local basename
+    local basename tryexec
     basename="$(basename "$f")"
+    tryexec="$(grep -m1 '^TryExec=' "$f" | cut -d= -f2- | tr -d '\r' || true)"
+    if [ -n "${tryexec}" ] && ! command -v "${tryexec}" >/dev/null 2>&1 && [ ! -x "${tryexec}" ]; then
+      log_info "Пропускаю ${basename}: TryExec=${tryexec} не найден"
+      rm -f "/usr/share/applications/${basename}"
+      skipped=$((skipped + 1))
+      continue
+    fi
     sed 's/\r$//' "$f" > "/usr/share/applications/${basename}"
+    installed=$((installed + 1))
   done
 
-  log_success "Подменю AIProxy установлено ($(ls -1 "${desktop_dir}"/aiproxy-*.desktop 2>/dev/null | wc -l) ярлыков)"
+  log_success "Подменю AIProxy установлено (${installed} ярлыков, пропущено ${skipped})"
 }
 
 # =============================================================================
