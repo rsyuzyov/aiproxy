@@ -2,7 +2,7 @@
 *.key
 *.pem
 config.yaml
-.env
+*.env
 
 # Редакторы
 .vscode/
