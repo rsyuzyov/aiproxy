@@ -85,17 +85,22 @@ DO_AMNEZIA=false
 DO_PROXYBRIDGE=false
 DO_ANTIGRAVITY=false
 DO_CLAUDE_CODE=false
-DO_CLAUDE_DESKTOP=false
 DO_COCKPIT_TOOLS=false
 DO_VSCODE=false
+DO_SINGBOX=false
+DO_XRAY=false
+DO_3XUI=false
+DO_GATE=false
 
 parse_args() {
   for arg in "$@"; do
     case "$arg" in
       --non-interactive|-y) NON_INTERACTIVE=true ;;
-      --all)
-        DO_CLIPROXY=true; DO_9ROUTER=true; DO_GOST=true; DO_PROXYBRIDGE=true
-        DO_XRDP=true; DO_OPENBOX=true; DO_FIREFOX=true ;;
+      --aiproxy)
+        DO_XRDP=true; DO_LXQT=true; DO_CLIPROXY=true; DO_9ROUTER=true
+        DO_FIREFOX=true; DO_COCKPIT_TOOLS=true; DO_PROXYBRIDGE=true ;;
+      --gate)
+        DO_GATE=true; DO_SINGBOX=true; DO_XRAY=true ;;
       --cliproxy)        DO_CLIPROXY=true ;;
       --9router)         DO_9ROUTER=true ;;
       --xrdp)            DO_XRDP=true ;;
@@ -108,9 +113,11 @@ parse_args() {
       --proxybridge)     DO_PROXYBRIDGE=true ;;
       --antigravity)     DO_ANTIGRAVITY=true ;;
       --claude-code)     DO_CLAUDE_CODE=true ;;
-      --claude-desktop)  DO_CLAUDE_DESKTOP=true ;;
       --cockpit-tools)   DO_COCKPIT_TOOLS=true ;;
       --vscode)          DO_VSCODE=true ;;
+      --sing-box|--singbox) DO_SINGBOX=true ;;
+      --xray)            DO_XRAY=true ;;
+      --3x-ui|--3xui)    DO_3XUI=true ;;
       --help|-h)         show_help; exit 0 ;;
       *) log_warn "Неизвестный аргумент: $arg" ;;
     esac
@@ -125,11 +132,18 @@ ${BOLD}AIProxy Setup Installer${NC}
   install.sh [OPTIONS]
 
 Опции:
-  --all               Установить основной набор: cliproxy + 9router + gost + ProxyBridge + xrdp + openbox + Firefox
+  ${BOLD}Мета-наборы:${NC}
+  --aiproxy           Набор AIProxy: xrdp + LXQt + cliproxy-api + 9router + Firefox + Cockpit Tools + ProxyBridge
+  --gate              Шлюз: sing-box (SOCKS5 :1080 + TUN) + xray (SOCKS5 :8080), outbound=direct
+
+  ${BOLD}Компоненты:${NC}
   --cliproxy          Установить службу cliproxy-api
   --gost              Установить gost (SOCKS5 прокси для всей сети, замена redsocks)
   --proxybridge       Установить ProxyBridge (TCP+UDP прокси per-process)
   --9router           Установить службу 9router
+  --sing-box          Установить sing-box (нейтральный конфиг; для шлюза используй --gate)
+  --xray              Установить Xray (нейтральный конфиг; для шлюза используй --gate)
+  --3x-ui             Установить 3x-ui (web-панель управления Xray, серверная часть)
   --xrdp              Установить xrdp-сервер (без Desktop Environment)
   --openbox           Настроить Openbox + tint2 как DE для xrdp
   --lxqt              Настроить LXQt как DE для xrdp (только Debian 13)
@@ -138,7 +152,6 @@ ${BOLD}AIProxy Setup Installer${NC}
   --amnezia           Установить AmneziaWG VPN-клиент
   --antigravity       Установить Google Antigravity IDE
   --claude-code       Установить Claude Code CLI (Anthropic)
-  --claude-desktop    Установить Claude Desktop (неофициальный Linux-порт)
   --cockpit-tools     Установить Cockpit Tools (менеджер аккаунтов AI IDE)
   --vscode            Установить Visual Studio Code
   --non-interactive   Неинтерактивный режим (требует явных флагов)
@@ -149,17 +162,17 @@ ${BOLD}AIProxy Setup Installer${NC}
   # Интерактивный мастер:
   bash install.sh
 
-  # Установить основной набор автоматически:
-  bash install.sh --all -y
+  # Набор AIProxy одной командой:
+  bash install.sh --aiproxy -y
+
+  # Поднять машину как шлюз:
+  bash install.sh --gate -y
 
   # Только gost + ProxyBridge:
   bash install.sh --gost --proxybridge -y
 
   # AI-инструменты (Antigravity + Claude Code + Cockpit Tools):
   bash install.sh --antigravity --claude-code --cockpit-tools -y
-
-  # Только AmneziaWG:
-  bash install.sh --amnezia -y
 EOF
 }
 
@@ -213,10 +226,24 @@ ${NC}
 
 EOF
 
+  echo -e "${BOLD}${CYAN}--- Мета-наборы ---${NC}"
+  if ask_yn "Набор AIProxy (xrdp + LXQt + cliproxy-api + 9router + Firefox + Cockpit Tools + ProxyBridge)?"; then
+    DO_XRDP=true; DO_LXQT=true; DO_CLIPROXY=true; DO_9ROUTER=true
+    DO_FIREFOX=true; DO_COCKPIT_TOOLS=true; DO_PROXYBRIDGE=true
+  fi
+  if ask_yn "Набор GATE (sing-box + xray в режиме шлюза)?"; then
+    DO_GATE=true; DO_SINGBOX=true; DO_XRAY=true
+  fi
+
+  echo ""
+  echo -e "${BOLD}${CYAN}--- Отдельные компоненты ---${NC}"
   ask_yn "Установить cliproxy-api (AI-прокси сервис)?" && DO_CLIPROXY=true || true
   ask_yn "Установить gost (SOCKS5 прокси для всей сети)?" && DO_GOST=true || true
   ask_yn "Установить ProxyBridge (per-process TCP+UDP прокси)?" && DO_PROXYBRIDGE=true || true
   ask_yn "Установить 9router (Node.js роутер)?" && DO_9ROUTER=true || true
+  ask_yn "Установить sing-box?" && DO_SINGBOX=true || true
+  ask_yn "Установить Xray?" && DO_XRAY=true || true
+  ask_yn "Установить 3x-ui (web-панель для Xray)?" && DO_3XUI=true || true
   ask_yn "Установить xrdp-сервер (RDP, порт 3389)?" && DO_XRDP=true || true
   ask_yn "Настроить Openbox + tint2 как рабочий стол?" && DO_OPENBOX=true || true
   ask_yn "Настроить LXQt как рабочий стол (Debian 13)?" && DO_LXQT=true || true
@@ -228,7 +255,6 @@ EOF
   echo -e "${BOLD}${CYAN}--- AI IDE инструменты ---${NC}"
   ask_yn "Установить Google Antigravity IDE?" && DO_ANTIGRAVITY=true || true
   ask_yn "Установить Claude Code CLI (Anthropic)?" && DO_CLAUDE_CODE=true || true
-  ask_yn "Установить Claude Desktop (неофициальный Linux-порт)?" && DO_CLAUDE_DESKTOP=true || true
   ask_yn "Установить Cockpit Tools (менеджер аккаунтов AI IDE)?" && DO_COCKPIT_TOOLS=true || true
   ask_yn "Установить Visual Studio Code?" && DO_VSCODE=true || true
 
@@ -236,30 +262,34 @@ EOF
   log_step "Выбранные компоненты"
   [ "$DO_CLIPROXY"       = "true" ] && log_info "✓ cliproxy-api"
   [ "$DO_GOST"           = "true" ] && log_info "✓ gost"
-  [ "$DO_PROXYBRIDGE"   = "true" ] && log_info "✓ ProxyBridge"
+  [ "$DO_PROXYBRIDGE"    = "true" ] && log_info "✓ ProxyBridge"
   [ "$DO_9ROUTER"        = "true" ] && log_info "✓ 9router"
+  [ "$DO_SINGBOX"        = "true" ] && log_info "✓ sing-box$([ "$DO_GATE" = "true" ] && echo " (режим шлюза)")"
+  [ "$DO_XRAY"           = "true" ] && log_info "✓ Xray$([ "$DO_GATE" = "true" ] && echo " (режим шлюза)")"
+  [ "$DO_3XUI"           = "true" ] && log_info "✓ 3x-ui"
   [ "$DO_XRDP"           = "true" ] && log_info "✓ xrdp-сервер"
   [ "$DO_OPENBOX"        = "true" ] && log_info "✓ Openbox + tint2"
-  [ "$DO_LXQT"          = "true" ] && log_info "✓ LXQt"
+  [ "$DO_LXQT"           = "true" ] && log_info "✓ LXQt"
   [ "$DO_FIREFOX"        = "true" ] && log_info "✓ Firefox ESR"
   [ "$DO_BRAVE"          = "true" ] && log_info "✓ Brave Browser"
   [ "$DO_AMNEZIA"        = "true" ] && log_info "✓ AmneziaWG VPN"
-  [ "$DO_ANTIGRAVITY"   = "true" ] && log_info "✓ Google Antigravity IDE"
-  [ "$DO_CLAUDE_CODE"   = "true" ] && log_info "✓ Claude Code CLI"
-  [ "$DO_CLAUDE_DESKTOP" = "true" ] && log_info "✓ Claude Desktop"
-  [ "$DO_COCKPIT_TOOLS" = "true" ] && log_info "✓ Cockpit Tools"
-  [ "$DO_VSCODE"        = "true" ] && log_info "✓ Visual Studio Code"
+  [ "$DO_ANTIGRAVITY"    = "true" ] && log_info "✓ Google Antigravity IDE"
+  [ "$DO_CLAUDE_CODE"    = "true" ] && log_info "✓ Claude Code CLI"
+  [ "$DO_COCKPIT_TOOLS"  = "true" ] && log_info "✓ Cockpit Tools"
+  [ "$DO_VSCODE"         = "true" ] && log_info "✓ Visual Studio Code"
 
 
 
   if [ "$DO_CLIPROXY" = "false" ] && [ "$DO_GOST" = "false" ] && \
      [ "$DO_PROXYBRIDGE" = "false" ] && \
      [ "$DO_9ROUTER" = "false" ] && [ "$DO_XRDP" = "false" ] && \
+     [ "$DO_SINGBOX" = "false" ] && [ "$DO_XRAY" = "false" ] && \
+     [ "$DO_3XUI" = "false" ] && \
      [ "$DO_OPENBOX" = "false" ] && [ "$DO_LXQT" = "false" ] && \
      [ "$DO_FIREFOX" = "false" ] && [ "$DO_BRAVE" = "false" ] && \
      [ "$DO_AMNEZIA" = "false" ] && \
      [ "$DO_ANTIGRAVITY" = "false" ] && [ "$DO_CLAUDE_CODE" = "false" ] && \
-     [ "$DO_CLAUDE_DESKTOP" = "false" ] && [ "$DO_COCKPIT_TOOLS" = "false" ] && \
+     [ "$DO_COCKPIT_TOOLS" = "false" ] && \
      [ "$DO_VSCODE" = "false" ]; then
     log_warn "Ничего не выбрано. Выход."
     exit 0
@@ -334,6 +364,23 @@ run_installations() {
     run_component_script "${scripts_dir}/install-9router.sh"
   fi
 
+  if [ "$DO_SINGBOX" = "true" ]; then
+    log_step "Установка sing-box$([ "$DO_GATE" = "true" ] && echo " (режим шлюза)")"
+    GATE_MODE="$([ "$DO_GATE" = "true" ] && echo 1 || echo 0)" \
+      run_component_script "${scripts_dir}/install-singbox.sh"
+  fi
+
+  if [ "$DO_XRAY" = "true" ]; then
+    log_step "Установка Xray$([ "$DO_GATE" = "true" ] && echo " (режим шлюза)")"
+    GATE_MODE="$([ "$DO_GATE" = "true" ] && echo 1 || echo 0)" \
+      run_component_script "${scripts_dir}/install-xray.sh"
+  fi
+
+  if [ "$DO_3XUI" = "true" ]; then
+    log_step "Установка 3x-ui"
+    run_component_script "${scripts_dir}/install-3xui.sh"
+  fi
+
   if [ "$DO_XRDP" = "true" ]; then
     log_step "Установка xrdp-сервера"
     run_component_script "${scripts_dir}/setup-xrdp.sh"
@@ -376,11 +423,6 @@ run_installations() {
     run_component_script "${scripts_dir}/install-claude-code.sh"
   fi
 
-  if [ "$DO_CLAUDE_DESKTOP" = "true" ]; then
-    log_step "Установка Claude Desktop"
-    run_component_script "${scripts_dir}/install-claude-desktop.sh"
-  fi
-
   if [ "$DO_COCKPIT_TOOLS" = "true" ]; then
     log_step "Установка Cockpit Tools"
     run_component_script "${scripts_dir}/install-cockpit-tools.sh"
@@ -413,6 +455,21 @@ EOF
     fi
   fi
   [ "$DO_9ROUTER"      = "true" ] && echo -e "  ${GREEN}✓${NC} 9router       (http://localhost:20128)"
+  if [ "$DO_SINGBOX"   = "true" ]; then
+    if [ "$DO_GATE" = "true" ]; then
+      echo -e "  ${GREEN}✓${NC} sing-box      (SOCKS5 :1080 + TUN-шлюз, конфиг: /etc/sing-box/config.json)"
+    else
+      echo -e "  ${GREEN}✓${NC} sing-box      (конфиг: /etc/sing-box/config.json)"
+    fi
+  fi
+  if [ "$DO_XRAY"      = "true" ]; then
+    if [ "$DO_GATE" = "true" ]; then
+      echo -e "  ${GREEN}✓${NC} Xray          (SOCKS5 :8080, outbound=direct, конфиг: /usr/local/etc/xray/config.json)"
+    else
+      echo -e "  ${GREEN}✓${NC} Xray          (конфиг: /usr/local/etc/xray/config.json)"
+    fi
+  fi
+  [ "$DO_3XUI"         = "true" ] && echo -e "  ${GREEN}✓${NC} 3x-ui         (web-панель, команда: x-ui)"
   [ "$DO_XRDP"         = "true" ] && echo -e "  ${GREEN}✓${NC} xrdp-сервер   (RDP порт 3389)"
   [ "$DO_OPENBOX"      = "true" ] && echo -e "  ${GREEN}✓${NC} Openbox + tint2"
   [ "$DO_LXQT"        = "true" ] && echo -e "  ${GREEN}✓${NC} LXQt"
@@ -421,7 +478,6 @@ EOF
   [ "$DO_AMNEZIA"        = "true" ] && echo -e "  ${GREEN}✓${NC} AmneziaWG       (конфиг: /etc/amnezia/amneziawg/)"
   [ "$DO_ANTIGRAVITY"   = "true" ] && echo -e "  ${GREEN}✓${NC} Antigravity IDE  (команда: antigravity)"
   [ "$DO_CLAUDE_CODE"   = "true" ] && echo -e "  ${GREEN}✓${NC} Claude Code      (команда: claude)"
-  [ "$DO_CLAUDE_DESKTOP" = "true" ] && echo -e "  ${GREEN}✓${NC} Claude Desktop   (команда: claude-desktop)"
   [ "$DO_COCKPIT_TOOLS" = "true" ] && echo -e "  ${GREEN}✓${NC} Cockpit Tools    (команда: cockpit-tools)"
   [ "$DO_VSCODE"        = "true" ] && echo -e "  ${GREEN}✓${NC} VS Code          (команда: code)"
 
