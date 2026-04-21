@@ -3,7 +3,7 @@
 <Menu>
 	<Name>Applications</Name>
 	<Menu>
-		<Name>AIProxy</Name>
+		<Name>AI</Name>
 		<Directory>aiproxy.directory</Directory>
 		<Include>
 			<Category>X-AIProxy</Category>

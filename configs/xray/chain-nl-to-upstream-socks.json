@@ -1,0 +1,47 @@
+{
+  "log": {
+    "loglevel": "warning"
+  },
+  "inbounds": [
+    {
+      "tag": "socks-in",
+      "listen": "0.0.0.0",
+      "port": 8080,
+      "protocol": "socks",
+      "settings": {
+        "auth": "password",
+        "accounts": [
+          {
+            "user": "bXg7fg",
+            "pass": "6AD6p6"
+          }
+        ],
+        "udp": true
+      },
+      "sniffing": {
+        "enabled": true,
+        "destOverride": ["http", "tls"]
+      }
+    }
+  ],
+  "outbounds": [
+    {
+      "tag": "to-upstream-socks",
+      "protocol": "socks",
+      "settings": {
+        "servers": [
+          {
+            "address": "72.56.181.101",
+            "port": 8000,
+            "users": [
+              {
+                "user": "bXg7fg",
+                "pass": "6AD6p6"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

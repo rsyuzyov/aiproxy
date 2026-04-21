@@ -1,5 +1,5 @@
 [Desktop Entry]
 Type=Directory
-Name=AIProxy
-Comment=Управление AIProxy и смежными сервисами
+Name=AI
+Comment=AI-инструменты, прокси и менеджеры
 Icon=network-server

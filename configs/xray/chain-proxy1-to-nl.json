@@ -1,0 +1,41 @@
+{
+  "log": {
+    "loglevel": "warning"
+  },
+  "inbounds": [
+    {
+      "tag": "socks-in",
+      "listen": "0.0.0.0",
+      "port": 8080,
+      "protocol": "socks",
+      "settings": {
+        "auth": "noauth",
+        "udp": true
+      },
+      "sniffing": {
+        "enabled": true,
+        "destOverride": ["http", "tls"]
+      }
+    }
+  ],
+  "outbounds": [
+    {
+      "tag": "to-nl",
+      "protocol": "socks",
+      "settings": {
+        "servers": [
+          {
+            "address": "nl.vps.ontab.ru",
+            "port": 8080,
+            "users": [
+              {
+                "user": "bXg7fg",
+                "pass": "6AD6p6"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

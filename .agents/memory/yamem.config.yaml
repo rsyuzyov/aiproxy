@@ -1,0 +1,14 @@
+local:
+  path: local
+  type: directory
+  commit_on_update: false
+
+shared: []
+
+diary_read_days: 7
+
+optimization:
+  auto: true
+  interval_days: 30
+
+notify_no_shared: false

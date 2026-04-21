@@ -131,7 +131,7 @@ Comment=AI IDE Account Manager (Antigravity, Copilot, Windsurf, Cursor...)
 Exec=${appimage_bin} --no-sandbox %U
 Terminal=false
 Type=Application
-Categories=Development;Utility;
+Categories=X-AIProxy;Development;Utility;
 DESKEOF
 
     log_success "Cockpit Tools ${version} установлен как AppImage!"

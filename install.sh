@@ -90,6 +90,7 @@ DO_VSCODE=false
 DO_SINGBOX=false
 DO_XRAY=false
 DO_3XUI=false
+DO_OPENCODE=false
 DO_GATE=false
 
 parse_args() {
@@ -115,6 +116,7 @@ parse_args() {
       --claude-code)     DO_CLAUDE_CODE=true ;;
       --cockpit-tools)   DO_COCKPIT_TOOLS=true ;;
       --vscode)          DO_VSCODE=true ;;
+      --opencode)        DO_OPENCODE=true ;;
       --sing-box|--singbox) DO_SINGBOX=true ;;
       --xray)            DO_XRAY=true ;;
       --3x-ui|--3xui)    DO_3XUI=true ;;
@@ -152,6 +154,7 @@ ${BOLD}AIProxy Setup Installer${NC}
   --amnezia           Установить AmneziaWG VPN-клиент
   --antigravity       Установить Google Antigravity IDE
   --claude-code       Установить Claude Code CLI (Anthropic)
+  --opencode          Установить OpenCode (CLI + Desktop)
   --cockpit-tools     Установить Cockpit Tools (менеджер аккаунтов AI IDE)
   --vscode            Установить Visual Studio Code
   --non-interactive   Неинтерактивный режим (требует явных флагов)
@@ -171,8 +174,8 @@ ${BOLD}AIProxy Setup Installer${NC}
   # Только gost + ProxyBridge:
   bash install.sh --gost --proxybridge -y
 
-  # AI-инструменты (Antigravity + Claude Code + Cockpit Tools):
-  bash install.sh --antigravity --claude-code --cockpit-tools -y
+  # AI-инструменты (Antigravity + Claude Code + OpenCode + Cockpit Tools):
+  bash install.sh --antigravity --claude-code --opencode --cockpit-tools -y
 EOF
 }
 
@@ -255,6 +258,7 @@ EOF
   echo -e "${BOLD}${CYAN}--- AI IDE инструменты ---${NC}"
   ask_yn "Установить Google Antigravity IDE?" && DO_ANTIGRAVITY=true || true
   ask_yn "Установить Claude Code CLI (Anthropic)?" && DO_CLAUDE_CODE=true || true
+  ask_yn "Установить OpenCode (CLI + Desktop)?" && DO_OPENCODE=true || true
   ask_yn "Установить Cockpit Tools (менеджер аккаунтов AI IDE)?" && DO_COCKPIT_TOOLS=true || true
   ask_yn "Установить Visual Studio Code?" && DO_VSCODE=true || true
 
@@ -275,6 +279,7 @@ EOF
   [ "$DO_AMNEZIA"        = "true" ] && log_info "✓ AmneziaWG VPN"
   [ "$DO_ANTIGRAVITY"    = "true" ] && log_info "✓ Google Antigravity IDE"
   [ "$DO_CLAUDE_CODE"    = "true" ] && log_info "✓ Claude Code CLI"
+  [ "$DO_OPENCODE"       = "true" ] && log_info "✓ OpenCode (CLI + Desktop)"
   [ "$DO_COCKPIT_TOOLS"  = "true" ] && log_info "✓ Cockpit Tools"
   [ "$DO_VSCODE"         = "true" ] && log_info "✓ Visual Studio Code"
 
@@ -289,6 +294,7 @@ EOF
      [ "$DO_FIREFOX" = "false" ] && [ "$DO_BRAVE" = "false" ] && \
      [ "$DO_AMNEZIA" = "false" ] && \
      [ "$DO_ANTIGRAVITY" = "false" ] && [ "$DO_CLAUDE_CODE" = "false" ] && \
+     [ "$DO_OPENCODE" = "false" ] && \
      [ "$DO_COCKPIT_TOOLS" = "false" ] && \
      [ "$DO_VSCODE" = "false" ]; then
     log_warn "Ничего не выбрано. Выход."
@@ -423,6 +429,11 @@ run_installations() {
     run_component_script "${scripts_dir}/install-claude-code.sh"
   fi
 
+  if [ "$DO_OPENCODE" = "true" ]; then
+    log_step "Установка OpenCode (CLI + Desktop)"
+    run_component_script "${scripts_dir}/install-opencode.sh"
+  fi
+
   if [ "$DO_COCKPIT_TOOLS" = "true" ]; then
     log_step "Установка Cockpit Tools"
     run_component_script "${scripts_dir}/install-cockpit-tools.sh"
@@ -478,6 +489,7 @@ EOF
   [ "$DO_AMNEZIA"        = "true" ] && echo -e "  ${GREEN}✓${NC} AmneziaWG       (конфиг: /etc/amnezia/amneziawg/)"
   [ "$DO_ANTIGRAVITY"   = "true" ] && echo -e "  ${GREEN}✓${NC} Antigravity IDE  (команда: antigravity)"
   [ "$DO_CLAUDE_CODE"   = "true" ] && echo -e "  ${GREEN}✓${NC} Claude Code      (команда: claude)"
+  [ "$DO_OPENCODE"       = "true" ] && echo -e "  ${GREEN}✓${NC} OpenCode         (CLI: opencode, Desktop: opencode-desktop)"
   [ "$DO_COCKPIT_TOOLS" = "true" ] && echo -e "  ${GREEN}✓${NC} Cockpit Tools    (команда: cockpit-tools)"
   [ "$DO_VSCODE"        = "true" ] && echo -e "  ${GREEN}✓${NC} VS Code          (команда: code)"
 

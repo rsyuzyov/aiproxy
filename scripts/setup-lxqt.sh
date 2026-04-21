@@ -73,8 +73,15 @@ export DISPLAY=${DISPLAY:-:10}
 export DESKTOP_SESSION=lxqt
 export XDG_CURRENT_DESKTOP=LXQt
 
-# Раскладка US/RU, Alt+Shift — задержка чтобы xrdpkeyb не перебил
-(sleep 3 && setxkbmap -layout us,ru -option grp:alt_shift_toggle) &
+# Сторож раскладки: xrdpkeyb сбрасывает раскладку при каждом переподключении.
+# Проверяем каждые 5 секунд и восстанавливаем us,ru если сбилось.
+(while true; do
+  cur=$(setxkbmap -query 2>/dev/null | awk '/^layout:/{print $2}')
+  if [ "$cur" != "us,ru" ]; then
+    setxkbmap -model pc105 -layout us,ru -option grp:alt_shift_toggle 2>/dev/null
+  fi
+  sleep 5
+done) &
 
 exec dbus-launch --exit-with-session startlxqt
 EOF
@@ -161,12 +168,33 @@ EOF
   fi
 }
 
+disable_lxc_useless() {
+  log_info "Отключаю компоненты, бесполезные в LXC-контейнере..."
+
+  # Power management — нет батареи/suspend, падает в LXC
+  mkdir -p /etc/xdg/autostart
+  cat > /etc/xdg/autostart/lxqt-powermanagement.desktop <<'EOF'
+[Desktop Entry]
+Type=Application
+Name=LXQt Power Management
+Hidden=true
+EOF
+
+  # Менеджер сменных носителей — нет устройств, не может зарегистрировать XF86Eject
+  local panel_conf="/etc/xdg/lxqt/panel.conf"
+  if [ -f "${panel_conf}" ]; then
+    sed -i 's/, mount//g; s/mount, //g' "${panel_conf}"
+  fi
+
+  log_success "Отключены: lxqt-powermanagement, mount-плагин панели"
+}
+
 install_ai_menu() {
   local configs_dir
   configs_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/../configs" && pwd)"
   local desktop_dir="${configs_dir}/desktop"
 
-  log_info "Устанавливаю подменю AIProxy..."
+  log_info "Устанавливаю подменю AI..."
 
   # .directory файл для категории
   if [ -f "${desktop_dir}/aiproxy.directory" ]; then
@@ -198,7 +226,7 @@ install_ai_menu() {
     installed=$((installed + 1))
   done
 
-  log_success "Подменю AIProxy установлено (${installed} ярлыков, пропущено ${skipped})"
+  log_success "Подменю AI установлено (${installed} ярлыков, пропущено ${skipped})"
 }
 
 # =============================================================================
@@ -212,6 +240,7 @@ main() {
   configure_startwm
   configure_xresources
   configure_bash_completion
+  disable_lxc_useless
   install_ai_menu
   set_lxqt_window_manager
   restart_xrdp
