@@ -232,26 +232,26 @@ interactive_menu() {
   # TAG — ключ (вернётся в stdout), ITEM — описание, STATE — ON/OFF.
   # Псевдо-разделители с тегами SEP_* игнорируются при парсинге.
   local -a items=(
-    SEP_META      "═══ МЕТА-НАБОРЫ ═══"                                            OFF
+    " "           "═══ МЕТА-НАБОРЫ ═══"                                            OFF
     AIPROXY       "Набор AIProxy (xrdp+LXQt+cliproxy+9router+Firefox+Cockpit+PB)"  OFF
     GATE          "Набор GATE (sing-box + xray в режиме шлюза)"                    OFF
-    SEP_AIPROXY   "═══ AI-ПРОКСИ ═══"                                              OFF
+    "  "          "═══ AI-ПРОКСИ ═══"                                              OFF
     CLIPROXY      "cliproxy-api (AI-прокси сервис)"                                OFF
     9ROUTER       "9router (Node.js роутер)"                                       OFF
-    SEP_NET       "═══ СЕТЬ: ПРОКСИ / VPN ═══"                                     OFF
+    "   "         "═══ СЕТЬ: ПРОКСИ / VPN ═══"                                     OFF
     GOST          "gost (SOCKS5 прокси для всей сети)"                             OFF
     PROXYBRIDGE   "ProxyBridge (per-process TCP+UDP прокси)"                       OFF
     SINGBOX       "sing-box"                                                       OFF
     XRAY          "Xray"                                                           OFF
     3XUI          "3x-ui (web-панель для Xray)"                                    OFF
     AMNEZIA       "AmneziaWG VPN-клиент"                                           OFF
-    SEP_DESKTOP   "═══ РАБОЧЕЕ ОКРУЖЕНИЕ ═══"                                      OFF
+    "    "        "═══ РАБОЧЕЕ ОКРУЖЕНИЕ ═══"                                      OFF
     XRDP          "xrdp-сервер (RDP, порт 3389)"                                   OFF
     OPENBOX       "Openbox + tint2 как рабочий стол"                               OFF
     LXQT          "LXQt как рабочий стол (Debian 13)"                              OFF
     FIREFOX       "Firefox ESR"                                                    OFF
     BRAVE         "Brave Browser"                                                  OFF
-    SEP_AI        "═══ AI IDE И ИНСТРУМЕНТЫ ═══"                                   OFF
+    "     "       "═══ AI IDE И ИНСТРУМЕНТЫ ═══"                                   OFF
     ANTIGRAVITY   "Google Antigravity IDE"                                         OFF
     CLAUDE_CODE   "Claude Code CLI (Anthropic)"                                    OFF
     OPENCODE      "OpenCode (CLI + Desktop)"                                       OFF
@@ -264,10 +264,9 @@ interactive_menu() {
   set +e
   selected=$(whiptail \
     --title "AIProxy Setup Wizard" \
-    --notags \
     --checklist \
     "Отметьте компоненты пробелом, перемещайтесь стрелками, Tab — к кнопкам, Enter — подтвердить." \
-    0 0 0 \
+    0 90 0 \
     "${items[@]}" \
     3>&1 1>&2 2>&3)
   rc=$?
