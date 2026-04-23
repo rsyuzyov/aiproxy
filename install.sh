@@ -206,63 +206,102 @@ ensure_repo() {
   chmod +x "${INSTALL_DIR}/install.sh" 2>/dev/null || true
 }
 
-# --- Интерактивное меню ---
+# --- Установка whiptail (если отсутствует) ---
+ensure_whiptail() {
+  if command -v whiptail &>/dev/null; then
+    return 0
+  fi
+  log_info "Устанавливаю whiptail..."
+  apt-get update -qq
+  apt-get install -y -qq whiptail
+}
+
+# --- Интерактивное меню (whiptail --checklist) ---
 interactive_menu() {
-  # Проверка: при запуске через pipe (wget|bash) /dev/tty нужен для интерактивного ввода
-  if ! exec 3</dev/tty 2>/dev/null; then
+  # При запуске через pipe (wget|bash) whiptail нужен /dev/tty для ввода
+  if [ ! -r /dev/tty ]; then
     log_error "Невозможно открыть /dev/tty для интерактивного ввода."
     log_error "Используйте: wget -O install.sh ... && bash install.sh"
     log_error "Или передайте компоненты флагами: install.sh --cliproxy --xrdp -y"
     exit 1
   fi
-  exec 3<&-
+
+  ensure_whiptail
+
+  # Формат whiptail --checklist: TAG ITEM STATE [TAG ITEM STATE ...]
+  # TAG — ключ (вернётся в stdout), ITEM — описание, STATE — ON/OFF.
+  local -a items=(
+    AIPROXY       "Набор AIProxy (xrdp+LXQt+cliproxy+9router+Firefox+Cockpit+PB)"  OFF
+    GATE          "Набор GATE (sing-box + xray в режиме шлюза)"                    OFF
+    CLIPROXY      "cliproxy-api (AI-прокси сервис)"                                OFF
+    GOST          "gost (SOCKS5 прокси для всей сети)"                             OFF
+    PROXYBRIDGE   "ProxyBridge (per-process TCP+UDP прокси)"                       OFF
+    9ROUTER       "9router (Node.js роутер)"                                       OFF
+    SINGBOX       "sing-box"                                                       OFF
+    XRAY          "Xray"                                                           OFF
+    3XUI          "3x-ui (web-панель для Xray)"                                    OFF
+    AMNEZIA       "AmneziaWG VPN-клиент"                                           OFF
+    XRDP          "xrdp-сервер (RDP, порт 3389)"                                   OFF
+    OPENBOX       "Openbox + tint2 как рабочий стол"                               OFF
+    LXQT          "LXQt как рабочий стол (Debian 13)"                              OFF
+    FIREFOX       "Firefox ESR"                                                    OFF
+    BRAVE         "Brave Browser"                                                  OFF
+    ANTIGRAVITY   "Google Antigravity IDE"                                         OFF
+    CLAUDE_CODE   "Claude Code CLI (Anthropic)"                                    OFF
+    OPENCODE      "OpenCode (CLI + Desktop)"                                       OFF
+    COCKPIT_TOOLS "Cockpit Tools (менеджер аккаунтов AI IDE)"                      OFF
+    VSCODE        "Visual Studio Code"                                             OFF
+  )
+
+  local selected rc
+  # Результат в stderr (пробел-разделённый список тегов в кавычках), интерфейс — на /dev/tty
+  set +e
+  selected=$(whiptail \
+    --title "AIProxy Setup Wizard" \
+    --checklist \
+    "Отметьте компоненты пробелом, перемещайтесь стрелками, Tab — к кнопкам, Enter — подтвердить." \
+    22 78 14 \
+    "${items[@]}" \
+    3>&1 1>&2 2>&3)
+  rc=$?
+  set -e
+
+  if [ "$rc" -ne 0 ]; then
+    log_warn "Отменено."
+    exit 0
+  fi
 
   clear
-  cat <<EOF
-${BOLD}${CYAN}
-╔══════════════════════════════════════════╗
-║       AIProxy Setup Wizard               ║
-╚══════════════════════════════════════════╝
-${NC}
-Выберите компоненты для установки:
-(Нажмите Enter для подтверждения каждого пункта)
 
-EOF
+  # selected выглядит как: "GOST" "SINGBOX" "XRAY"
+  local tag
+  for tag in $(echo "$selected" | tr -d '"'); do
+    case "$tag" in
+      AIPROXY)
+        DO_XRDP=true; DO_LXQT=true; DO_CLIPROXY=true; DO_9ROUTER=true
+        DO_FIREFOX=true; DO_COCKPIT_TOOLS=true; DO_PROXYBRIDGE=true ;;
+      GATE)          DO_GATE=true; DO_SINGBOX=true; DO_XRAY=true ;;
+      CLIPROXY)      DO_CLIPROXY=true ;;
+      GOST)          DO_GOST=true ;;
+      PROXYBRIDGE)   DO_PROXYBRIDGE=true ;;
+      9ROUTER)       DO_9ROUTER=true ;;
+      SINGBOX)       DO_SINGBOX=true ;;
+      XRAY)          DO_XRAY=true ;;
+      3XUI)          DO_3XUI=true ;;
+      AMNEZIA)       DO_AMNEZIA=true ;;
+      XRDP)          DO_XRDP=true ;;
+      OPENBOX)       DO_OPENBOX=true ;;
+      LXQT)          DO_LXQT=true ;;
+      FIREFOX)       DO_FIREFOX=true ;;
+      BRAVE)         DO_BRAVE=true ;;
+      ANTIGRAVITY)   DO_ANTIGRAVITY=true ;;
+      CLAUDE_CODE)   DO_CLAUDE_CODE=true ;;
+      OPENCODE)      DO_OPENCODE=true ;;
+      COCKPIT_TOOLS) DO_COCKPIT_TOOLS=true ;;
+      VSCODE)        DO_VSCODE=true ;;
+    esac
+  done
 
-  echo -e "${BOLD}${CYAN}--- Мета-наборы ---${NC}"
-  if ask_yn "Набор AIProxy (xrdp + LXQt + cliproxy-api + 9router + Firefox + Cockpit Tools + ProxyBridge)?"; then
-    DO_XRDP=true; DO_LXQT=true; DO_CLIPROXY=true; DO_9ROUTER=true
-    DO_FIREFOX=true; DO_COCKPIT_TOOLS=true; DO_PROXYBRIDGE=true
-  fi
-  if ask_yn "Набор GATE (sing-box + xray в режиме шлюза)?"; then
-    DO_GATE=true; DO_SINGBOX=true; DO_XRAY=true
-  fi
-
-  echo ""
-  echo -e "${BOLD}${CYAN}--- Отдельные компоненты ---${NC}"
-  ask_yn "Установить cliproxy-api (AI-прокси сервис)?" && DO_CLIPROXY=true || true
-  ask_yn "Установить gost (SOCKS5 прокси для всей сети)?" && DO_GOST=true || true
-  ask_yn "Установить ProxyBridge (per-process TCP+UDP прокси)?" && DO_PROXYBRIDGE=true || true
-  ask_yn "Установить 9router (Node.js роутер)?" && DO_9ROUTER=true || true
-  ask_yn "Установить sing-box?" && DO_SINGBOX=true || true
-  ask_yn "Установить Xray?" && DO_XRAY=true || true
-  ask_yn "Установить 3x-ui (web-панель для Xray)?" && DO_3XUI=true || true
-  ask_yn "Установить xrdp-сервер (RDP, порт 3389)?" && DO_XRDP=true || true
-  ask_yn "Настроить Openbox + tint2 как рабочий стол?" && DO_OPENBOX=true || true
-  ask_yn "Настроить LXQt как рабочий стол (Debian 13)?" && DO_LXQT=true || true
-  ask_yn "Установить Firefox ESR?" && DO_FIREFOX=true || true
-  ask_yn "Установить Brave Browser?" && DO_BRAVE=true || true
-  ask_yn "Установить AmneziaWG VPN-клиент?" && DO_AMNEZIA=true || true
-
-  echo ""
-  echo -e "${BOLD}${CYAN}--- AI IDE инструменты ---${NC}"
-  ask_yn "Установить Google Antigravity IDE?" && DO_ANTIGRAVITY=true || true
-  ask_yn "Установить Claude Code CLI (Anthropic)?" && DO_CLAUDE_CODE=true || true
-  ask_yn "Установить OpenCode (CLI + Desktop)?" && DO_OPENCODE=true || true
-  ask_yn "Установить Cockpit Tools (менеджер аккаунтов AI IDE)?" && DO_COCKPIT_TOOLS=true || true
-  ask_yn "Установить Visual Studio Code?" && DO_VSCODE=true || true
-
-  echo ""
   log_step "Выбранные компоненты"
   [ "$DO_CLIPROXY"       = "true" ] && log_info "✓ cliproxy-api"
   [ "$DO_GOST"           = "true" ] && log_info "✓ gost"
@@ -300,20 +339,6 @@ EOF
     log_warn "Ничего не выбрано. Выход."
     exit 0
   fi
-
-  echo ""
-  ask_yn "Начать установку?" || { log_warn "Отменено."; exit 0; }
-}
-
-ask_yn() {
-  local prompt="$1"
-  local answer
-  printf "${YELLOW}?${NC} %s [y/N] " "$prompt"
-  read -r answer </dev/tty
-  case "${answer,,}" in
-    y|yes|д|да) return 0 ;;
-    *) return 1 ;;
-  esac
 }
 
 # --- Запуск нужных скриптов ---
