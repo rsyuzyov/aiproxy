@@ -1,36 +1,43 @@
 # AIProxy Setup
 
-Набор скриптов для развертывания OpenAI-совместимых прокси. Создавались и проверялись на Debian 13.
+Набор скриптов для развертывания среды для управления AI-подписками и настройки OpenAI-совместимых прокси.
 
 ## Что включает
 
+### Мета-наборы
+
+| Набор         | Состав                                                                           | Назначение                        |
+| ------------- | -------------------------------------------------------------------------------- | --------------------------------- |
+| **`aiproxy`** | cliproxy-api + 9router + ProxyBridge + xrdp + LXQt + Firefox ESR + Cockpit Tools | Клиентская машина для работы с AI |
+| **`gate`**    | sing-box (SOCKS5 `:1080` + TUN) + Xray (SOCKS5 `:8080`, outbound=direct)         | Прокси-шлюз для локальной сети    |
+
 ### AI-прокси сервисы
 
-| Компонент        | Описание                                                             |
-| ---------------- | -------------------------------------------------------------------- |
-| **cliproxy-api** | AI-прокси сервер с поддержкой OpenAI/Gemini/Claude (порт `8317`)     |
-| **9router**      | Ещё один AI-прокси сервер (порт `20128`)                             |
+| Компонент        | Описание                                                         |
+| ---------------- | ---------------------------------------------------------------- |
+| **cliproxy-api** | AI-прокси сервер с поддержкой OpenAI/Gemini/Claude (порт `8317`) |
+| **9router**      | Ещё один AI-прокси сервер (порт `20128`)                         |
 
 ### Сеть: прокси и VPN
 
-| Компонент       | Описание                                                             |
-| --------------- | -------------------------------------------------------------------- |
-| **gost**        | SOCKS5 прокси для всей сети (замена redsocks)                        |
-| **ProxyBridge** | Перенаправление TCP/UDP трафика per-process через SOCKS5/HTTP прокси |
+| Компонент       | Описание                                                                        |
+| --------------- | ------------------------------------------------------------------------------- |
+| **gost**        | SOCKS5 прокси для всей сети (замена redsocks)                                   |
+| **ProxyBridge** | Перенаправление TCP/UDP трафика per-process через SOCKS5/HTTP прокси            |
 | **sing-box**    | Мультипротокольный прокси-клиент; в режиме `--gate` — SOCKS5 `:1080` + TUN-шлюз |
-| **Xray**        | Прокси-клиент; в режиме `--gate` — SOCKS5 `:8080`, outbound=direct   |
-| **3x-ui**       | Web-панель управления Xray                                           |
-| **AmneziaWG**   | VPN-клиент на базе WireGuard (обход DPI)                             |
+| **Xray**        | Прокси-клиент; в режиме `--gate` — SOCKS5 `:8080`, outbound=direct              |
+| **3x-ui**       | Web-панель управления Xray                                                      |
+| **AmneziaWG**   | VPN-клиент на базе WireGuard (обход DPI)                                        |
 
 ### Рабочее окружение
 
-| Компонент          | Описание                                       |
-| ------------------ | ---------------------------------------------- |
-| **xrdp**           | RDP-сервер (порт `3389`)                       |
+| Компонент           | Описание                                      |
+| ------------------- | --------------------------------------------- |
+| **xrdp**            | RDP-сервер (порт `3389`)                      |
 | **Openbox + tint2** | Лёгкий рабочий стол для xrdp                  |
-| **LXQt**           | Полноценный рабочий стол для xrdp (Debian 13)  |
-| **Firefox ESR**    | Браузер                                        |
-| **Brave Browser**  | Альтернативный браузер                         |
+| **LXQt**            | Полноценный рабочий стол для xrdp (Debian 13) |
+| **Firefox ESR**     | Браузер                                       |
+| **Brave Browser**   | Альтернативный браузер                        |
 
 ### AI IDE и инструменты
 
@@ -117,35 +124,35 @@ bash install.sh --antigravity --claude-code --opencode --cockpit-tools -y
 
 **Мета-наборы:**
 
-| Параметр        | Описание                                                                                |
-| --------------- | --------------------------------------------------------------------------------------- |
-| `--aiproxy`     | cliproxy-api + 9router + ProxyBridge + xrdp + LXQt + Firefox + Cockpit Tools            |
-| `--gate`        | sing-box (SOCKS5 `:1080` + TUN) + Xray (SOCKS5 `:8080`), outbound=direct                |
+| Параметр    | Описание                                                                     |
+| ----------- | ---------------------------------------------------------------------------- |
+| `--aiproxy` | cliproxy-api + 9router + ProxyBridge + xrdp + LXQt + Firefox + Cockpit Tools |
+| `--gate`    | sing-box (SOCKS5 `:1080` + TUN) + Xray (SOCKS5 `:8080`), outbound=direct     |
 
 **Отдельные компоненты:**
 
-| Параметр                   | Описание                                                             |
-| -------------------------- | -------------------------------------------------------------------- |
-| `--cliproxy`               | cliproxy-api                                                         |
-| `--9router`                | 9router                                                              |
-| `--gost`                   | gost (SOCKS5 прокси для всей сети)                                   |
-| `--proxybridge`            | ProxyBridge (per-process TCP+UDP прокси)                             |
-| `--sing-box`               | sing-box (нейтральный конфиг; для шлюза используй `--gate`)          |
-| `--xray`                   | Xray (нейтральный конфиг; для шлюза используй `--gate`)              |
-| `--3x-ui`                  | 3x-ui (web-панель для Xray)                                          |
-| `--amnezia`                | AmneziaWG VPN-клиент                                                 |
-| `--xrdp`                   | xrdp-сервер (без DE)                                                 |
-| `--openbox`                | Openbox + tint2 как DE                                               |
-| `--lxqt`                   | LXQt как DE (Debian 13)                                              |
-| `--firefox`                | Firefox ESR                                                          |
-| `--brave`                  | Brave Browser                                                        |
-| `--antigravity`            | Google Antigravity IDE                                               |
-| `--claude-code`            | Claude Code CLI                                                      |
-| `--opencode`               | OpenCode (CLI + Desktop)                                             |
-| `--cockpit-tools`          | Cockpit Tools (менеджер аккаунтов AI IDE)                            |
-| `--vscode`                 | Visual Studio Code                                                   |
-| `-y` / `--non-interactive` | Неинтерактивный режим                                                |
-| `--help`                   | Показать справку                                                     |
+| Параметр                   | Описание                                                    |
+| -------------------------- | ----------------------------------------------------------- |
+| `--cliproxy`               | cliproxy-api                                                |
+| `--9router`                | 9router                                                     |
+| `--gost`                   | gost (SOCKS5 прокси для всей сети)                          |
+| `--proxybridge`            | ProxyBridge (per-process TCP+UDP прокси)                    |
+| `--sing-box`               | sing-box (нейтральный конфиг; для шлюза используй `--gate`) |
+| `--xray`                   | Xray (нейтральный конфиг; для шлюза используй `--gate`)     |
+| `--3x-ui`                  | 3x-ui (web-панель для Xray)                                 |
+| `--amnezia`                | AmneziaWG VPN-клиент                                        |
+| `--xrdp`                   | xrdp-сервер (без DE)                                        |
+| `--openbox`                | Openbox + tint2 как DE                                      |
+| `--lxqt`                   | LXQt как DE (Debian 13)                                     |
+| `--firefox`                | Firefox ESR                                                 |
+| `--brave`                  | Brave Browser                                               |
+| `--antigravity`            | Google Antigravity IDE                                      |
+| `--claude-code`            | Claude Code CLI                                             |
+| `--opencode`               | OpenCode (CLI + Desktop)                                    |
+| `--cockpit-tools`          | Cockpit Tools (менеджер аккаунтов AI IDE)                   |
+| `--vscode`                 | Visual Studio Code                                          |
+| `-y` / `--non-interactive` | Неинтерактивный режим                                       |
+| `--help`                   | Показать справку                                            |
 
 > **gost + ProxyBridge** — рекомендуемая связка для клиентской машины. Gost обслуживает всю сеть (SOCKS5 без пароля → upstream с паролем), ProxyBridge выбирает приложения для проксирования.
 
@@ -272,10 +279,10 @@ gost-toggle.sh off      # отключить upstream (direct-режим)
 gost-toggle.sh status   # текущий статус
 ```
 
-| Режим    | Описание                                      |
-| -------- | --------------------------------------------- |
-| `DIRECT` | gost работает напрямую, без upstream          |
-| `PROXY`  | трафик идёт через внешний SOCKS5 прокси       |
+| Режим    | Описание                                |
+| -------- | --------------------------------------- |
+| `DIRECT` | gost работает напрямую, без upstream    |
+| `PROXY`  | трафик идёт через внешний SOCKS5 прокси |
 
 ### Установка Google Antigravity IDE
 
@@ -418,15 +425,15 @@ aiproxy/
 
 ### Адреса сервисов
 
-| Сервис            | Адрес                                    |
-| ----------------- | ---------------------------------------- |
-| cliproxy-api      | http://localhost:8317                    |
-| 9router           | http://localhost:20128                   |
-| gost              | SOCKS5 `0.0.0.0:1080`                    |
-| sing-box (`--gate`) | SOCKS5 `:1080` + TUN-шлюз              |
-| Xray (`--gate`)   | SOCKS5 `:8080` (outbound=direct)         |
-| 3x-ui             | web-панель (команда `x-ui` для настройки) |
-| RDP               | `<IP сервера>:3389`                      |
+| Сервис              | Адрес                                     |
+| ------------------- | ----------------------------------------- |
+| cliproxy-api        | http://localhost:8317                     |
+| 9router             | http://localhost:20128                    |
+| gost                | SOCKS5 `0.0.0.0:1080`                     |
+| sing-box (`--gate`) | SOCKS5 `:1080` + TUN-шлюз                 |
+| Xray (`--gate`)     | SOCKS5 `:8080` (outbound=direct)          |
+| 3x-ui               | web-панель (команда `x-ui` для настройки) |
+| RDP                 | `<IP сервера>:3389`                       |
 
 ### Управление службами
 
