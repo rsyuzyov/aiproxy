@@ -266,7 +266,7 @@ interactive_menu() {
     --title "AIProxy Setup Wizard" \
     --notags \
     --checklist \
-    "Отметьте компоненты пробелом, перемещайтесь стрелками, Tab — к кнопкам, Enter — подтвердить. Отметка раздела выберет все его пункты." \
+    "Отметьте компоненты пробелом, перемещайтесь стрелками, Tab — к кнопкам, Enter — подтвердить." \
     0 0 0 \
     "${items[@]}" \
     3>&1 1>&2 2>&3)
@@ -280,32 +280,10 @@ interactive_menu() {
 
   clear
 
-  # Собираем selected в ассоциативный массив
-  declare -A sel=()
+  # selected выглядит как: "GOST" "SINGBOX" "XRAY"
+  # Теги SEP_* — визуальные разделители, игнорируются (без совпадения в case)
   local tag
   for tag in $(echo "$selected" | tr -d '"'); do
-    sel["$tag"]=1
-  done
-
-  # Разделы: SEP отмечен → добавить все пункты секции; SEP снят → удалить все пункты секции
-  # (SEP_META — чисто визуальный, без массового toggle, т.к. его «пункты» — сами мета-наборы)
-  local section_items it
-  for sep in SEP_AIPROXY SEP_NET SEP_DESKTOP SEP_AI; do
-    case "$sep" in
-      SEP_AIPROXY) section_items="CLIPROXY 9ROUTER" ;;
-      SEP_NET)     section_items="GOST PROXYBRIDGE SINGBOX XRAY 3XUI AMNEZIA" ;;
-      SEP_DESKTOP) section_items="XRDP OPENBOX LXQT FIREFOX BRAVE" ;;
-      SEP_AI)      section_items="ANTIGRAVITY CLAUDE_CODE OPENCODE COCKPIT_TOOLS VSCODE" ;;
-    esac
-    if [ -n "${sel[$sep]:-}" ]; then
-      for it in $section_items; do sel["$it"]=1; done
-    else
-      for it in $section_items; do unset 'sel['"$it"']'; done
-    fi
-  done
-
-  # Применяем выбор в DO_*
-  for tag in "${!sel[@]}"; do
     case "$tag" in
       AIPROXY)
         DO_XRDP=true; DO_LXQT=true; DO_CLIPROXY=true; DO_9ROUTER=true
