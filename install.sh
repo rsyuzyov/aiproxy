@@ -259,6 +259,33 @@ interactive_menu() {
     VSCODE        "Visual Studio Code"                                             OFF
   )
 
+  # --- Расчёт размеров под содержимое ---
+  # whiptail растягивает listbox на всю ширину окна (отдельного контроля нет),
+  # поэтому считаем ширину окна = max(tag) + max(desc) + overhead.
+  local item_count=$(( ${#items[@]} / 3 ))
+  local max_tag=0 max_desc=0 len idx
+  for ((idx = 0; idx < ${#items[@]}; idx += 3)); do
+    len=${#items[$idx]};     [ "$len" -gt "$max_tag" ]  && max_tag=$len
+    len=${#items[$((idx+1))]}; [ "$len" -gt "$max_desc" ] && max_desc=$len
+  done
+
+  # Размер терминала (через stty — надёжнее $COLUMNS/$LINES)
+  local term_lines term_cols
+  read -r term_lines term_cols < <(stty size </dev/tty 2>/dev/null || echo "24 80")
+
+  # Ширина окна: чекбокс [X] (4) + tag + gap (2) + desc + padding/рамка (10)
+  local dlg_width=$(( 4 + max_tag + 2 + max_desc + 10 ))
+  [ "$dlg_width" -gt "$((term_cols - 2))" ] && dlg_width=$((term_cols - 2))
+  [ "$dlg_width" -lt 60 ] && dlg_width=60
+
+  # Высота окна: подсказка (2) + пункты + кнопки/рамка (6)
+  local dlg_height=$(( item_count + 8 ))
+  [ "$dlg_height" -gt "$((term_lines - 2))" ] && dlg_height=$((term_lines - 2))
+
+  # Высота списка = высота окна минус служебные строки
+  local list_height=$(( dlg_height - 8 ))
+  [ "$list_height" -lt 5 ] && list_height=5
+
   local selected rc
   # Результат в stderr (пробел-разделённый список тегов в кавычках), интерфейс — на /dev/tty
   set +e
@@ -266,7 +293,7 @@ interactive_menu() {
     --title "AIProxy Setup Wizard" \
     --checklist \
     "Отметьте компоненты пробелом, перемещайтесь стрелками, Tab — к кнопкам, Enter — подтвердить." \
-    0 90 0 \
+    "$dlg_height" "$dlg_width" "$list_height" \
     "${items[@]}" \
     3>&1 1>&2 2>&3)
   rc=$?
