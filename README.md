@@ -23,6 +23,7 @@
 | Компонент       | Описание                                                                        |
 | --------------- | ------------------------------------------------------------------------------- |
 | **gost**        | SOCKS5 прокси для всей сети (замена redsocks)                                   |
+| **redsocks**    | Прозрачный TCP-редирект через SOCKS5 + iptables (классика)                      |
 | **ProxyBridge** | Перенаправление TCP/UDP трафика per-process через SOCKS5/HTTP прокси            |
 | **sing-box**    | Мультипротокольный прокси-клиент; в режиме `--gate` — SOCKS5 `:1080` + TUN-шлюз |
 | **Xray**        | Прокси-клиент; в режиме `--gate` — SOCKS5 `:8080`, outbound=direct              |
@@ -136,6 +137,7 @@ bash install.sh --antigravity --claude-code --opencode --cockpit-tools -y
 | `--cliproxy`               | cliproxy-api                                                |
 | `--9router`                | 9router                                                     |
 | `--gost`                   | gost (SOCKS5 прокси для всей сети)                          |
+| `--redsocks`               | redsocks (прозрачный TCP-редирект через SOCKS5 + iptables)  |
 | `--proxybridge`            | ProxyBridge (per-process TCP+UDP прокси)                    |
 | `--sing-box`               | sing-box (нейтральный конфиг; для шлюза используй `--gate`) |
 | `--xray`                   | Xray (нейтральный конфиг; для шлюза используй `--gate`)     |
@@ -284,6 +286,27 @@ gost-toggle.sh status   # текущий статус
 | `DIRECT` | gost работает напрямую, без upstream    |
 | `PROXY`  | трафик идёт через внешний SOCKS5 прокси |
 
+### Настройка redsocks
+
+```bash
+bash ~/aiproxy/scripts/setup-redsocks.sh
+```
+
+- Устанавливает пакеты `redsocks`, `iptables`, `netfilter-persistent`, `iptables-persistent`
+- Подготавливает службу; параметры прокси задаются отдельно через `proxy-toggle.sh`
+- Классическая связка: TCP-трафик перехватывается iptables и уходит в SOCKS5
+
+Управление после установки:
+
+```bash
+proxy-toggle.sh set 1.2.3.4 1080 myuser mypassword   # задать SOCKS5-прокси
+proxy-toggle.sh on       # включить редирект через iptables
+proxy-toggle.sh off      # выключить редирект
+proxy-toggle.sh status   # текущий статус
+```
+
+> **redsocks vs gost**: gost гибче, работает сам как SOCKS5-сервер для LAN. redsocks — классический подход через iptables NAT для трафика самой машины. Обычно выбирают один из двух.
+
 ### Установка Google Antigravity IDE
 
 ```bash
@@ -407,6 +430,8 @@ aiproxy/
     ├── install-3xui.sh               # Установка 3x-ui
     ├── setup-gost.sh                 # Установка gost
     ├── gost-toggle.sh                # Управление gost прокси
+    ├── setup-redsocks.sh             # Установка redsocks + iptables
+    ├── proxy-toggle.sh               # Управление redsocks (set/on/off/status)
     ├── install-amnezia.sh            # Установка AmneziaWG VPN-клиента
     ├── setup-amnezia-connection.sh   # Настройка VPN-подключения Amnezia
     ├── setup-xrdp.sh                 # Настройка xrdp-сервера

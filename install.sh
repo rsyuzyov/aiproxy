@@ -81,6 +81,7 @@ DO_LXQT=false
 DO_FIREFOX=false
 DO_BRAVE=false
 DO_GOST=false
+DO_REDSOCKS=false
 DO_AMNEZIA=false
 DO_PROXYBRIDGE=false
 DO_ANTIGRAVITY=false
@@ -91,6 +92,7 @@ DO_SINGBOX=false
 DO_XRAY=false
 DO_3XUI=false
 DO_OPENCODE=false
+DO_OMNIROUTE=false
 DO_GATE=false
 
 parse_args() {
@@ -104,12 +106,14 @@ parse_args() {
         DO_GATE=true; DO_SINGBOX=true; DO_XRAY=true ;;
       --cliproxy)        DO_CLIPROXY=true ;;
       --9router)         DO_9ROUTER=true ;;
+      --omniroute)       DO_OMNIROUTE=true ;;
       --xrdp)            DO_XRDP=true ;;
       --openbox)         DO_OPENBOX=true ;;
       --lxqt)            DO_LXQT=true ;;
       --firefox)         DO_FIREFOX=true ;;
       --brave)           DO_BRAVE=true ;;
       --gost)            DO_GOST=true ;;
+      --redsocks)        DO_REDSOCKS=true ;;
       --amnezia)         DO_AMNEZIA=true ;;
       --proxybridge)     DO_PROXYBRIDGE=true ;;
       --antigravity)     DO_ANTIGRAVITY=true ;;
@@ -141,8 +145,10 @@ ${BOLD}AIProxy Setup Installer${NC}
   ${BOLD}Компоненты:${NC}
   --cliproxy          Установить службу cliproxy-api
   --gost              Установить gost (SOCKS5 прокси для всей сети, замена redsocks)
+  --redsocks          Установить redsocks (прозрачный TCP-редирект через SOCKS5 + iptables)
   --proxybridge       Установить ProxyBridge (TCP+UDP прокси per-process)
   --9router           Установить службу 9router
+  --omniroute         Установить службу OmniRoute (AI gateway, 160+ провайдеров)
   --sing-box          Установить sing-box (нейтральный конфиг; для шлюза используй --gate)
   --xray              Установить Xray (нейтральный конфиг; для шлюза используй --gate)
   --3x-ui             Установить 3x-ui (web-панель управления Xray, серверная часть)
@@ -238,8 +244,10 @@ interactive_menu() {
     "  "          "═══ AI-ПРОКСИ ═══"                                              OFF
     CLIPROXY      "cliproxy-api (AI-прокси сервис)"                                OFF
     9ROUTER       "9router (Node.js роутер)"                                       OFF
+    OMNIROUTE     "OmniRoute (AI gateway, 160+ провайдеров)"                       OFF
     "   "         "═══ СЕТЬ: ПРОКСИ / VPN ═══"                                     OFF
     GOST          "gost (SOCKS5 прокси для всей сети)"                             OFF
+    REDSOCKS      "redsocks (прозрачный TCP-редирект через SOCKS5 + iptables)"     OFF
     PROXYBRIDGE   "ProxyBridge (per-process TCP+UDP прокси)"                       OFF
     SINGBOX       "sing-box"                                                       OFF
     XRAY          "Xray"                                                           OFF
@@ -317,8 +325,10 @@ interactive_menu() {
       GATE)          DO_GATE=true; DO_SINGBOX=true; DO_XRAY=true ;;
       CLIPROXY)      DO_CLIPROXY=true ;;
       GOST)          DO_GOST=true ;;
+      REDSOCKS)      DO_REDSOCKS=true ;;
       PROXYBRIDGE)   DO_PROXYBRIDGE=true ;;
       9ROUTER)       DO_9ROUTER=true ;;
+      OMNIROUTE)     DO_OMNIROUTE=true ;;
       SINGBOX)       DO_SINGBOX=true ;;
       XRAY)          DO_XRAY=true ;;
       3XUI)          DO_3XUI=true ;;
@@ -339,8 +349,10 @@ interactive_menu() {
   log_step "Выбранные компоненты"
   [ "$DO_CLIPROXY"       = "true" ] && log_info "✓ cliproxy-api"
   [ "$DO_GOST"           = "true" ] && log_info "✓ gost"
+  [ "$DO_REDSOCKS"       = "true" ] && log_info "✓ redsocks"
   [ "$DO_PROXYBRIDGE"    = "true" ] && log_info "✓ ProxyBridge"
   [ "$DO_9ROUTER"        = "true" ] && log_info "✓ 9router"
+  [ "$DO_OMNIROUTE"      = "true" ] && log_info "✓ OmniRoute"
   [ "$DO_SINGBOX"        = "true" ] && log_info "✓ sing-box$([ "$DO_GATE" = "true" ] && echo " (режим шлюза)")"
   [ "$DO_XRAY"           = "true" ] && log_info "✓ Xray$([ "$DO_GATE" = "true" ] && echo " (режим шлюза)")"
   [ "$DO_3XUI"           = "true" ] && log_info "✓ 3x-ui"
@@ -359,8 +371,9 @@ interactive_menu() {
 
 
   if [ "$DO_CLIPROXY" = "false" ] && [ "$DO_GOST" = "false" ] && \
+     [ "$DO_REDSOCKS" = "false" ] && \
      [ "$DO_PROXYBRIDGE" = "false" ] && \
-     [ "$DO_9ROUTER" = "false" ] && [ "$DO_XRDP" = "false" ] && \
+     [ "$DO_9ROUTER" = "false" ] && [ "$DO_OMNIROUTE" = "false" ] && [ "$DO_XRDP" = "false" ] && \
      [ "$DO_SINGBOX" = "false" ] && [ "$DO_XRAY" = "false" ] && \
      [ "$DO_3XUI" = "false" ] && \
      [ "$DO_OPENBOX" = "false" ] && [ "$DO_LXQT" = "false" ] && \
@@ -419,6 +432,11 @@ run_installations() {
     run_component_script "${scripts_dir}/setup-gost.sh"
   fi
 
+  if [ "$DO_REDSOCKS" = "true" ]; then
+    log_step "Установка redsocks"
+    run_component_script "${scripts_dir}/setup-redsocks.sh"
+  fi
+
   if [ "$DO_PROXYBRIDGE" = "true" ]; then
     log_step "Установка ProxyBridge"
     run_component_script "${scripts_dir}/install-proxybridge.sh"
@@ -427,6 +445,11 @@ run_installations() {
   if [ "$DO_9ROUTER" = "true" ]; then
     log_step "Установка 9router"
     run_component_script "${scripts_dir}/install-9router.sh"
+  fi
+
+  if [ "$DO_OMNIROUTE" = "true" ]; then
+    log_step "Установка OmniRoute"
+    run_component_script "${scripts_dir}/install-omniroute.sh"
   fi
 
   if [ "$DO_SINGBOX" = "true" ]; then
@@ -517,6 +540,7 @@ ${NC}
 EOF
   [ "$DO_CLIPROXY"     = "true" ] && echo -e "  ${GREEN}✓${NC} cliproxy-api  (http://localhost:8317)"
   [ "$DO_GOST"         = "true" ] && echo -e "  ${GREEN}✓${NC} gost          (SOCKS5 на 0.0.0.0:1080, управление: ${INSTALL_DIR}/scripts/gost-toggle.sh)"
+  [ "$DO_REDSOCKS"     = "true" ] && echo -e "  ${GREEN}✓${NC} redsocks      (прозрачный TCP-редирект, управление: ${INSTALL_DIR}/scripts/proxy-toggle.sh)"
   if [ "$DO_PROXYBRIDGE" = "true" ]; then
     if /usr/local/bin/ProxyBridge --help &>/dev/null 2>&1; then
       echo -e "  ${GREEN}✓${NC} ProxyBridge   (ProxyBridge --help | ProxyBridgeGUI)"
@@ -525,6 +549,7 @@ EOF
     fi
   fi
   [ "$DO_9ROUTER"      = "true" ] && echo -e "  ${GREEN}✓${NC} 9router       (http://localhost:20128)"
+  [ "$DO_OMNIROUTE"    = "true" ] && echo -e "  ${GREEN}✓${NC} OmniRoute     (http://localhost:20129)"
   if [ "$DO_SINGBOX"   = "true" ]; then
     if [ "$DO_GATE" = "true" ]; then
       echo -e "  ${GREEN}✓${NC} sing-box      (SOCKS5 :1080 + TUN-шлюз, конфиг: /etc/sing-box/config.json)"

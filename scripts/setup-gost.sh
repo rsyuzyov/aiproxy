@@ -31,27 +31,64 @@ require_root() {
 }
 
 # --- Установка бинарника gost ---
+# Апстримовый install.sh (github.com/go-gost/gost/raw/master/install.sh) сейчас сломан:
+# awk вытаскивает сразу два URL для linux/amd64 (обычный и amd64v3), curl падает
+# с "Malformed input to a URL function". Плюс их "latest" — это nightly.
+# Качаем стабильный релиз напрямую через GitHub API /releases/latest.
 install_gost_binary() {
   if command -v gost &>/dev/null; then
     local current_ver
     current_ver=$(gost -V 2>&1 | head -1 || echo "unknown")
     log_info "gost уже установлен: ${current_ver}"
-    log_info "Переустанавливаю последнюю версию..."
+    log_info "Переустанавливаю последнюю стабильную версию..."
   fi
 
-  log_info "Скачиваю и устанавливаю gost..."
-  local tmp_installer="/tmp/gost-install.sh"
-  if ! curl -fsSL -o "${tmp_installer}" https://github.com/go-gost/gost/raw/master/install.sh; then
-    log_error "Не удалось скачать установочный скрипт gost"
+  # Архитектура
+  local arch cpu_arch
+  arch=$(uname -m)
+  case "$arch" in
+    x86_64)        cpu_arch="amd64" ;;
+    aarch64|arm64) cpu_arch="arm64" ;;
+    armv7*)        cpu_arch="armv7" ;;
+    armv6*)        cpu_arch="armv6" ;;
+    i686)          cpu_arch="386"   ;;
+    *) log_error "Неподдерживаемая архитектура: $arch"; exit 1 ;;
+  esac
+
+  log_info "Получаю информацию о последнем стабильном релизе..."
+  local api_url="https://api.github.com/repos/go-gost/gost/releases/latest"
+  local release_json
+  if ! release_json=$(curl -fsSL "$api_url"); then
+    log_error "Не удалось запросить GitHub API"
     exit 1
   fi
-  chmod +x "${tmp_installer}"
-  if ! bash "${tmp_installer}" --install; then
-    log_error "Не удалось установить gost"
-    rm -f "${tmp_installer}"
+
+  # Ищем asset с именем вида gost_<ver>_linux_<arch>.tar.gz (без суффиксов вроде amd64v3)
+  local asset_regex="gost_[^_]+_linux_${cpu_arch}\\.tar\\.gz"
+  local download_url
+  download_url=$(echo "$release_json" \
+    | grep -oE "https://[^\"]+/${asset_regex}" \
+    | head -1)
+
+  if [ -z "$download_url" ]; then
+    log_error "Не найден asset linux_${cpu_arch} в последнем релизе"
     exit 1
   fi
-  rm -f "${tmp_installer}"
+
+  log_info "Скачиваю: $(basename "$download_url")"
+  local tmp_tgz="/tmp/gost.tar.gz"
+  if ! curl -fsSL -o "$tmp_tgz" "$download_url"; then
+    log_error "Ошибка загрузки gost"
+    exit 1
+  fi
+
+  if ! tar -xzf "$tmp_tgz" -C /usr/local/bin gost; then
+    log_error "Ошибка распаковки gost"
+    rm -f "$tmp_tgz"
+    exit 1
+  fi
+  rm -f "$tmp_tgz"
+  chmod +x /usr/local/bin/gost
 
   if ! command -v gost &>/dev/null; then
     log_error "Бинарник gost не найден после установки"

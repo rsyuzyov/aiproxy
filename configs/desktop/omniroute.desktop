@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=OmniRoute
+Comment=Панель управления OmniRoute
+Exec=firefox http://127.0.0.1:20129
+Icon=network-server
+Terminal=false
+Categories=X-AIProxy;Network;
+Keywords=router;omniroute;ai;proxy;

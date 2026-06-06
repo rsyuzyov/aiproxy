@@ -1,0 +1,16 @@
+[Unit]
+Description=OmniRoute AI Gateway
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# Порт, хост и обязательные секреты (JWT_SECRET, API_KEY_SECRET, ...) генерируются
+# install-omniroute.sh и хранятся в этом файле с правами 0600.
+EnvironmentFile=/etc/omniroute/omniroute.env
+ExecStart=__BIN_PATH__
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
