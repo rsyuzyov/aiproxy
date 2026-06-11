@@ -1,28 +1,43 @@
 # AIProxy — Онбординг
 
-> Этот файл — точка входа для разработчика и AI-агента. Читай его первым при начале работы с репозиторием.
+> Точка входа для разработчика и AI-агента. Читай первым при начале работы с репозиторием.
 
 ## Что это
 
-**AIProxy** — набор bash-скриптов для автоматического развёртывания AI-инфраструктуры на Debian.
-Цель: поднять OpenAI-совместимые прокси + трафик через внешний SOCKS5/HTTP прокси + опционально GUI-доступ по RDP.
+**AIProxy** — набор bash-скриптов для автоматического развёртывания AI-инфраструктуры на Debian 13.
+Цель: поднять OpenAI-совместимые прокси + завернуть трафик через внешний SOCKS5/HTTP-прокси или VPN +
+опционально GUI-доступ по RDP для OAuth и работы с AI IDE.
 
-Типичный сценарий использования: VPS или LXC-контейнер в Proxmox, к которому AI-агенты и IDE обращаются как к локальному OpenAI-endpoint.
+Типичный сценарий: VPS или LXC-контейнер в Proxmox, к которому AI-агенты и IDE обращаются как к
+локальному OpenAI-endpoint, а исходящий трафик идёт через арендованный прокси.
 
 ---
 
 ## Стек
 
-| Слой                      | Компонент                                                        | Зачем                                                                                           |
-| ------------------------- | ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| AI-прокси                 | **cliproxy-api**                                                 | Основной сервис. OpenAI-совместимый API, мультипровайдер (Gemini, Claude, OpenAI). Порт `8317`. |
-| AI-прокси (альт.)         | **9router**                                                      | Второй прокси на Node.js. Порт `20128`.                                                         |
-| Системный прокси          | **ProxyBridge**                                                  | Перехватывает трафик на уровне ядра (Netfilter NFQUEUE). TCP+UDP. GUI. Рекомендован.            |
-| Системный прокси (устар.) | **redsocks**                                                     | Только TCP, iptables. Не совместим с ProxyBridge одновременно.                                  |
-| VPN                       | **AmneziaWG**                                                    | WireGuard-совместимый VPN с обфускацией. Альтернатива прокси.                                   |
-| GUI / RDP                 | **xrdp + openbox**                                               | RDP-доступ к Debian-десктопу. Нужен для OAuth, визуальной работы с IDE.                         |
-| Браузеры                  | Firefox ESR, Brave                                               | Работают через xrdp-сессию.                                                                     |
-| AI IDE                    | Antigravity, Claude Code, Claude Desktop, Cockpit Tools, VS Code | Опциональные инструменты разработки.                                                            |
+| Слой                        | Компонент          | Зачем                                                                            |
+| --------------------------- | ------------------ | -------------------------------------------------------------------------------- |
+| AI-прокси (основной)        | **cliproxy-api**   | OpenAI-совместимый API, мультипровайдер (Gemini/Claude/OpenAI). Порт `8317`.     |
+| AI-прокси (альт.)           | **9router**        | Роутер на Node.js. Порт `20128`.                                                 |
+| AI-прокси (альт.)           | **OmniRoute**      | AI gateway, 160+ провайдеров. Порт `20129` (не 20128 — чтобы не клешиться).      |
+| Системный прокси            | **ProxyBridge**    | Per-process перехват на уровне ядра (NFQUEUE), TCP+UDP, GUI. Рекомендован.       |
+| Системный прокси            | **gost**           | SOCKS5-сервер для всей LAN (без пароля → upstream с паролем). Замена redsocks.   |
+| Системный прокси (классика) | **redsocks**       | Прозрачный TCP-редирект через iptables. Несовместим с ProxyBridge одновременно.  |
+| Прокси-клиент / шлюз        | **sing-box**       | В режиме `--gate`: SOCKS5 `:1080` + TUN-шлюз для LAN.                            |
+| Прокси-клиент / шлюз        | **Xray**           | В режиме `--gate`: SOCKS5 `:8080`, outbound=direct. Панель — 3x-ui.              |
+| VPN                         | **AmneziaWG**      | WireGuard с обфускацией (обход DPI).                                              |
+| GUI / RDP                   | **xrdp + LXQt/Openbox** | RDP-доступ к десктопу. Нужен для OAuth, визуальной работы с IDE.            |
+| Браузеры                    | Firefox ESR, Brave | Работают через xrdp-сессию.                                                       |
+| AI IDE / инструменты        | Antigravity, Claude Code, OpenCode, Cockpit Tools, VS Code | Опциональные.                              |
+
+---
+
+## Мета-наборы
+
+| Набор         | Разворачивает                                                                  | Назначение         |
+| ------------- | ------------------------------------------------------------------------------ | ------------------ |
+| **`--aiproxy`** | xrdp + LXQt + cliproxy-api + 9router + Firefox + Cockpit Tools + ProxyBridge | Клиентская машина  |
+| **`--gate`**    | sing-box (SOCKS5 `:1080` + TUN) + Xray (SOCKS5 `:8080`, outbound=direct)     | Прокси-шлюз для LAN |
 
 ---
 
@@ -30,218 +45,159 @@
 
 ```
 aiproxy/
-├── install.sh                        # Мастер-установщик (точка входа)
-├── README.md                         # Пользовательская документация
-├── onboarding.md                     # Этот файл
-├── scripts/
-│   ├── install-cliproxy-api.sh       # Установка + автообновление cliproxy-api
-│   ├── install-proxybridge.sh        # Установка ProxyBridge
-│   ├── install-9router.sh            # Установка 9router (Node.js)
-│   ├── install-firefox.sh
-│   ├── install-brave.sh
-│   ├── install-amnezia.sh            # Установка AmneziaWG
-│   ├── install-antigravity.sh        # Google Antigravity IDE
-│   ├── install-claude-code.sh        # Claude Code CLI
-│   ├── install-claude-desktop.sh     # Claude Desktop (неофициальный Linux-порт)
-│   ├── install-cockpit-tools.sh      # Cockpit Tools (менеджер аккаунтов AI IDE)
-│   ├── install-vscode.sh             # VS Code
-│   ├── setup-xrdp.sh                 # xrdp + openbox + раскладка US
-│   ├── setup-redsocks.sh             # redsocks + iptables
-│   ├── setup-amnezia-connection.sh   # Подключение VPN-конфига AmneziaWG
-│   ├── proxy-toggle.sh               # Управление redsocks (on/off/status)
-│   ├── cliproxy-api-update.sh        # Обновление cliproxy-api (запускается таймером)
-│   └── 9router-update.sh             # Обновление 9router (запускается таймером)
+├── install.sh                   # Мастер-установщик (единственная точка входа)
+├── README.md                    # Пользовательская документация
+├── onboarding.md                # Этот файл
+├── scripts/                     # По одному install-/setup- скрипту на компонент
+│   ├── install-cliproxy-api.sh  # + cliproxy-api-update.sh (автообновление по таймеру)
+│   ├── install-9router.sh       # + 9router-update.sh / 9router-selfupdate.sh
+│   ├── install-omniroute.sh
+│   ├── install-proxybridge.sh   # + proxybridge-gen-args.sh, proxybridge-gui-wrapper.sh
+│   ├── setup-gost.sh            # + gost-toggle.sh (set/on/off/status)
+│   ├── setup-redsocks.sh        # + proxy-toggle.sh
+│   ├── install-singbox.sh / install-xray.sh / install-3xui.sh
+│   ├── install-amnezia.sh / setup-amnezia-connection.sh
+│   ├── setup-xrdp.sh            # xrdp + раскладка + reconnectwm.sh workaround
+│   ├── setup-openbox.sh / setup-lxqt.sh
+│   ├── install-firefox.sh / install-brave.sh
+│   └── install-{antigravity,claude-code,opencode,cockpit-tools,vscode}.sh
 ├── configs/
-│   ├── systemd/                      # Unit-файлы для всех сервисов
-│   │   ├── cliproxy-api.service
-│   │   ├── cliproxy-api-updater.{service,timer}
-│   │   ├── cliproxy-api-rollback.service
-│   │   ├── 9router.service
-│   │   ├── 9router-updater.{service,timer}
-│   │   └── proxybridge.service
-│   └── proxybridge/                  # Конфиги ProxyBridge
-│       └── tint2rc                   # Конфиг панели задач openbox
-└── docs/
-    ├── tasks/                        # Задачи для AI-агентов
-    │   ├── _task-template.md         # Шаблон задачи
-    │   ├── backlog.md                # Задачи в очереди
-    │   ├── in-progress.md            # В работе
-    │   └── done.md                   # Выполненные
-    └── ai/
-        └── prompts/                  # Промпты для тестирования и сценариев
+│   ├── systemd/                 # Unit-файлы + .timer для всех сервисов
+│   ├── proxybridge/             # config.ini (единый для GUI и systemd), gui.desktop
+│   ├── gost/                    # config-direct.yaml
+│   ├── singbox/  xray/          # config.json + gate.json (+ chain-*.json для Xray)
+│   └── desktop/                 # .desktop + LXQt-меню AIProxy (aiproxy-menu.menu, *.directory)
+├── docs/ai/prompts/             # Промпты для тестовых сценариев
+└── .agents/memory/local/        # yamem-память проекта (см. ниже)
 ```
 
 ---
 
 ## Требования к среде
 
-- **ОС**: Debian 13 (тестируется на ней; Debian 12 — ограниченно)
-- **Права**: root (`sudo` не поддерживается, только `su -` или прямой root)
-- **Интернет**: нужен для скачивания релизов с GitHub
-- **ProxyBridge**: требует нативный Linux и `glibc >= 2.38`; не работает в WSL
+- **ОС**: Debian 13 (основная цель; Debian 12 — ограниченно, ProxyBridge не запустится).
+- **Права**: root (`sudo` не поддерживается, только прямой root / `su -`).
+- **Интернет**: нужен для скачивания релизов с GitHub.
+- **ProxyBridge**: нативный Linux + `glibc >= 2.38` (Debian 13 = 2.40). Не работает в WSL.
 
 ---
 
 ## Быстрый старт (для человека)
 
 ```bash
-# Поднять всё (cliproxy-api + ProxyBridge + xrdp + Firefox)
-wget -O- https://raw.githubusercontent.com/rsyuzyov/aiproxy/master/install.sh | bash -s -- --all -y
+# Клиентская машина одной командой:
+wget -O- https://raw.githubusercontent.com/rsyuzyov/aiproxy/master/install.sh | bash -s -- --aiproxy -y
 
-# Или клонировать и запустить интерактивно
-git clone https://github.com/rsyuzyov/aiproxy.git ~/aiproxy
-cd ~/aiproxy && bash install.sh
+# Прокси-шлюз:
+wget -O- .../install.sh | bash -s -- --gate -y
+
+# Интерактивный мастер (whiptail-меню с чекбоксами):
+git clone https://github.com/rsyuzyov/aiproxy.git ~/aiproxy && cd ~/aiproxy && bash install.sh
 ```
 
 ---
 
-## Быстрый старт (для AI-агента)
+## Онбординг для AI-агента
 
-Перед выполнением любой задачи агент должен:
-
-1. **Прочитать этот файл** (`onboarding.md`) — уже делаешь.
-2. **Прочитать `docs/tasks/backlog.md`** — там активные задачи.
-3. **Прочитать файлы из `docs/tasks/in-progress.md`** — что сейчас в работе.
-4. Прочитать конкретный файл задачи, если он указан.
-5. Изучить релевантные скрипты в `scripts/` по задаче.
-
-### Соглашения для агентов
-
-- Все изменения — через отдельные ветки git. Ветка указана в задаче (поле `branch:`).
-- Для тестирования используется **LXC-контейнер 131 на hv1** (Proxmox).
-- Команда отката контейнера: `pct stop 131 ; zfs rollback -R pool2/subvol-131-disk-0@<снапшот> && pct start 131`
-- Доступ к контейнеру: `ssh hv1` → `pct enter 131` или `ssh root@<IP контейнера>`
-- Все скрипты должны работать в **неинтерактивном режиме** (`-y`).
-- После изменения скрипта — обязательно протестировать полный запуск.
+1. **Прочитать этот файл** (`onboarding.md`).
+2. **Память проекта — в yamem** (`.agents/memory/local/`), не в `docs/`:
+   - `MEMORY.md` — устойчивые факты, инфраструктура, грабли;
+   - `backlog.md` / `archive.md` — задачи;
+   - `diary/YYYY-MM-DD.md` — журнал работы и решений;
+   - `topics/` — накопленные знания (`xrdp.md`, `cliproxy-9router.md`, `proxybridge.md`).
+   - Перед действием сверяйся с памятью (инфраструктура, ID контейнеров, грабли).
+3. Все изменения скриптов проверять полным прогоном на тестовом контейнере (ID/хост — см.
+   `MEMORY.md`, раздел «Инфраструктура»), все скрипты обязаны работать в `-y` режиме.
 
 ---
 
 ## Ключевые точки в коде
 
-### `install.sh`
+### `install.sh` — единственная точка входа
 
-Единственная точка входа. Логика:
+Поток: `require_root` → `ensure_locales` (en_US + ru_RU UTF-8) → при запуске через `wget|bash`
+без аргументов клонирует репо в `~/aiproxy` и `exec`'ает себя → `parse_args` (флаги → `DO_*`
+переменные; мета-наборы раскрываются в набор `DO_*`) → `ensure_repo` → если не `-y`:
+`interactive_menu` (whiptail `--checklist`) → `run_installations` → `show_summary`.
 
-1. `require_root` — проверка прав
-2. `ensure_locales` — настройка `en_US.UTF-8` + `ru_RU.UTF-8`
-3. `ensure_repo` — клонирует репо в `~/aiproxy` если не существует
-4. `parse_args` — парсит CLI-флаги в переменные `DO_*`
-5. `interactive_menu` — интерактивный выбор (если не `-y`)
-6. `run_installations` — запускает скрипты последовательно; при `exit 137` (SIGKILL) — retry
-7. `show_summary` — итоговый отчёт
-
-**Флаг `--all` разворачивается в**: `cliproxy + proxybridge + xrdp + firefox`
+- `run_installations` запускает скрипты компонентов по порядку; при `exit 137` (SIGKILL,
+  обычно OOM в LXC) — один retry через 5с.
+- `--gate` прокидывает `GATE_MODE=1` в install-singbox.sh / install-xray.sh.
 
 ### `install-cliproxy-api.sh`
 
-Самый сложный скрипт:
+Самый сложный: качает релиз с GitHub API → `/opt/cliproxy-api/` → systemd-сервис +
+**автообновление** (`cliproxy-api-updater.timer`, 05:00) + **rollback** при неудачном старте.
+Порт `8317`, панель `/management.html`.
 
-- Скачивает последний релиз с GitHub API
-- Устанавливает в `/opt/cliproxy-api/`
-- Регистрирует `systemd`-сервис
-- Настраивает **автообновление** (`cliproxy-api-updater.timer`) и **rollback** при неудачном старте
+### `install-proxybridge.sh` + ProxyBridge
 
-### `install-proxybridge.sh`
+Ставит через официальный `deploy.sh` от InterceptSuite. Ключевые **проектные решения** (см.
+`topics/proxybridge.md`):
+- GUI и systemd-сервис **взаимоисключающие**; `gui-wrapper.sh` стопает сервис на старте GUI и
+  возвращает на выходе. ProxyBridge должен работать всегда.
+- NFQUEUE на `OUTPUT` **без `--queue-bypass`** — fail-closed: упал ProxyBridge → трафик встаёт,
+  а не утекает мимо прокси.
+- Единый конфиг `/etc/proxybridge/config.ini` (формат RULES `id|proto|action|enabled|process|hosts|ports`,
+  action 0=PROXY/1=DIRECT/2=BLOCK); `gen-args.sh` парсит его в аргументы сервиса.
 
-- Использует официальный `deploy.sh` от [InterceptSuite/ProxyBridge](https://github.com/InterceptSuite/ProxyBridge)
-- Зависимости: `libnetfilter-queue1`, `libnfnetlink0`, `iptables`, `libgtk-3-0`
-- Проверяет совместимость glibc — при несовместимости сообщает, но не падает
-- Настраивает автозапуск через systemd-сервис при наличии сохранённого конфига
+### `setup-xrdp.sh`
+
+xrdp + раскладка US/RU + `reconnectwm.sh` (always-restart chansrv на reconnect — лечит
+буфер обмена и чёрный экран; см. `topics/xrdp.md`). DE отдельно: `setup-lxqt.sh` или `setup-openbox.sh`.
 
 ---
 
-## Адреса сервисов после установки
+## Адреса сервисов
 
-| Сервис                  | Адрес                                   |
-| ----------------------- | --------------------------------------- |
-| cliproxy-api            | `http://localhost:8317`                 |
-| cliproxy-api management | `http://localhost:8317/management.html` |
-| 9router                 | `http://localhost:20128`                |
-| RDP                     | `<IP сервера>:3389`                     |
+| Сервис                  | Адрес                                     |
+| ----------------------- | ----------------------------------------- |
+| cliproxy-api            | `http://localhost:8317` (`/management.html`) |
+| 9router                 | `http://localhost:20128`                  |
+| OmniRoute               | `http://localhost:20129`                  |
+| gost                    | SOCKS5 `0.0.0.0:1080`                     |
+| sing-box (`--gate`)     | SOCKS5 `:1080` + TUN-шлюз                 |
+| Xray (`--gate`)         | SOCKS5 `:8080` (outbound=direct)          |
+| 3x-ui                   | web-панель (команда `x-ui`)               |
+| RDP                     | `<IP сервера>:3389`                       |
 
 ---
 
 ## Управление сервисами
 
 ```bash
-# cliproxy-api
-systemctl status cliproxy-api
-systemctl restart cliproxy-api
-journalctl -u cliproxy-api -f
+systemctl status|restart cliproxy-api ; journalctl -u cliproxy-api -f
+systemctl list-timers --all | grep updater          # автообновления
 
-# Автообновление
-systemctl list-timers --all | grep updater
+# gost
+scripts/gost-toggle.sh set IP PORT USER PASS ; scripts/gost-toggle.sh on|off|status
 
-# ProxyBridge — ручной запуск (перехват всего TCP через SOCKS5)
-ProxyBridge --proxy socks5://1.2.3.4:1080 --rule "*:*:*:TCP:PROXY"
-ProxyBridge --cleanup        # очистка iptables после сбоя
-ProxyBridgeGUI               # графический интерфейс
+# ProxyBridge
+ProxyBridgeGUI                 # GUI (стопает сервис, возвращает по выходу)
+ProxyBridge --cleanup          # снять NFQUEUE-правила из iptables
+cat /proc/net/netfilter/nfnetlink_queue   # кто держит очередь, дропы
 
-# redsocks (устаревший)
-proxy-toggle.sh on           # включить
-proxy-toggle.sh off          # выключить
-proxy-toggle.sh status       # статус
-
-# AmneziaWG VPN
-systemctl start  awg-quick@amnezia0
-systemctl stop   awg-quick@amnezia0
-awg show
+# AmneziaWG
+systemctl start|stop awg-quick@amnezia0 ; awg show
 ```
 
 ---
 
 ## Известные ограничения и нюансы
 
-| Проблема                                                | Решение                                                                                                                                            |
-| ------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| ProxyBridge не совместим с glibc < 2.38                 | Используй Debian 13 (glibc 2.40). На Debian 12 установится, но не запустится.                                                                      |
-| redsocks и ProxyBridge нельзя использовать одновременно | Оба управляют iptables. Выбирай один. Рекомендуется ProxyBridge.                                                                                   |
-| ProxyBridge не работает в WSL                           | Требует нативный Linux с поддержкой Netfilter NFQUEUE.                                                                                             |
-| xrdp: раскладка клавиатуры                              | При входе по RDP принудительно устанавливается US. Переключение языка внутри сессии работает через xrdp-конфиг.                                    |
-| Claude Desktop                                          | Официальной Linux-версии нет. Используется неофициальный порт [aaddrick/claude-desktop-debian](https://github.com/aaddrick/claude-desktop-debian). |
+| Тема                              | Суть / решение                                                                                       |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| ProxyBridge ↔ glibc               | Требует glibc ≥ 2.38 → только Debian 13+. На Debian 12 установится, но не запустится.                |
+| redsocks ↔ ProxyBridge            | Оба рулят iptables — одновременно нельзя. Выбирать один (рекоменд. ProxyBridge).                     |
+| ProxyBridge fail-closed           | Без `--queue-bypass` — by design. Упал → трафик встаёт (защита от утечки). НЕ «чинить».              |
+| xrdp буфер/чёрный экран           | chansrv не переживает нештатный обрыв TCP; `reconnectwm.sh` рестартует chansrv на reconnect.          |
+| cliproxy-api `/management.html`   | Виснет при доступе не с loopback/LAN при активном ProxyBridge-правиле `*:PROXY`. См. `topics/`.       |
+| 9router `/login`,`/dashboard`     | SSR-deadlock в next-server после чтения db.json (не зависит от версии). Обхода нет, API работает.    |
 
 ---
 
-## Рабочий процесс разработки
+## Память и задачи (yamem)
 
-```bash
-# 1. Посмотреть задачи
-cat docs/tasks/backlog.md
-
-# 2. Создать ветку по задаче
-git checkout -b <branch-из-задачи>
-
-# 3. Внести изменения
-
-# 4. Откатить тестовый контейнер и протестировать
-ssh hv1 "pct stop 131 && zfs rollback -R pool2/subvol-131-disk-0@<снапшот> && pct start 131"
-ssh root@<IP> "wget -O- .../install.sh | bash -s -- --all -y"
-
-# 5. Закоммитить
-git add -A && git commit -m "feat: <описание>"
-```
-
----
-
-## Структура задач для AI-агентов (`docs/tasks/`)
-
-Каждая задача находится в `backlog.md`, `in-progress.md` или `done.md` в формате:
-
-```markdown
-## ID-001 — Короткий заголовок
-
-- status: backlog | in-progress | done
-- owner: ai | human
-- priority: high | medium | low
-- updated_at: YYYY-MM-DD
-- branch: имя-ветки
-
-**Контекст**
-...
-
-**Definition of Done**
-
-- [ ] критерий
-```
-
-Шаблон новой задачи: `docs/tasks/_task-template.md`
+Трекинг задач и накопленные знания — в `.agents/memory/local/` (навык `yamem`). `docs/tasks/`
+больше не используется. Перед содержательной работой агент обязан выполнить блок «При старте»
+навыка yamem (чтение MEMORY.md, backlog, diary, topics).
