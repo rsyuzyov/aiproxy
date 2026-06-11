@@ -109,8 +109,11 @@ configure_reconnect_script() {
   # Upstream fix: PR neutrinolabs/xrdp#3567 (merged 2025-07-21 в devel → 0.11+).
   # На 0.10.x не бэкпортирован.
   #
-  # Скрипт вызывается sesman'ом на каждый реконнект. Если chansrv мёртв —
-  # чистим сокеты и стартуем новый через systemd-run --scope.
+  # Скрипт вызывается sesman'ом на каждый реконнект. Старый chansrv, переживший
+  # disconnect/reconnect, не делает чистый re-handshake cliprdr-канала — буфер
+  # обмена VM→host отваливается/флапает после переподключения. Поэтому на КАЖДЫЙ
+  # реконнект убиваем живой chansrv (если есть), чистим сокеты и поднимаем свежий
+  # через systemd-run --scope. Это же лечит chansrv, умерший от exit(0).
 
   cat > /etc/xrdp/reconnectwm.sh <<'RECON'
 #!/bin/bash
@@ -134,7 +137,8 @@ DNUM="${DISP#:}"
 DNUM="${DNUM%%.*}"
 NORM_DISP=":$DNUM"
 
-chansrv_alive_for_display() {
+# Печатает PID живого chansrv для текущего display (если есть).
+chansrv_pid_for_display() {
     local pid env_disp env_disp_norm
     for pid in $(pgrep -f '^/usr/sbin/xrdp-chansrv(\.real)?$' 2>/dev/null); do
         [ -r "/proc/$pid/environ" ] || continue
@@ -143,18 +147,14 @@ chansrv_alive_for_display() {
         env_disp_norm=":${env_disp#:}"
         env_disp_norm="${env_disp_norm%%.*}"
         if [ "$env_disp_norm" = "$NORM_DISP" ]; then
-            echo "  found alive chansrv pid=$pid env_DISPLAY=$env_disp"
+            echo "$pid"
             return 0
         fi
     done
     return 1
 }
 
-if chansrv_alive_for_display; then
-    echo "  chansrv alive for $DISP, nothing to do"
-    exit 0
-fi
-
+# Лок на display: два параллельных реконнекта не должны рестартовать chansrv разом.
 LOCKFILE="/run/xrdp-chansrv-start.$DNUM.lock"
 exec 9>"$LOCKFILE" 2>/dev/null || exit 0
 if ! flock -n 9; then
@@ -162,7 +162,19 @@ if ! flock -n 9; then
     exit 0
 fi
 
-echo "  chansrv dead for $DISP, cleaning orphan sockets"
+# Always-restart: убиваем живой chansrv, чтобы новый сделал чистый cliprdr-handshake.
+OLD_PID="$(chansrv_pid_for_display)" || OLD_PID=""
+if [ -n "$OLD_PID" ]; then
+    echo "  killing alive chansrv pid=$OLD_PID for clean reconnect"
+    kill "$OLD_PID" 2>/dev/null
+    for i in 1 2 3 4 5 6; do
+        kill -0 "$OLD_PID" 2>/dev/null || break
+        sleep 0.5
+    done
+    kill -9 "$OLD_PID" 2>/dev/null || true
+fi
+
+echo "  cleaning chansrv sockets for $DISP"
 rm -f \
     "$SOCK_PATH/xrdp_chansrv_socket_$DNUM" \
     "$SOCK_PATH/xrdp_chansrv_audio_in_socket_$DNUM" \
