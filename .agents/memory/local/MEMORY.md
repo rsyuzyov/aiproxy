@@ -33,8 +33,11 @@
 - ⚠️ **Зомби-watchdog в RDP-сессии (2026-04-17, контейнер 107):** предыдущая итерация AI-агента запустила `while true; do setxkbmap; sleep 5; done &` инлайн в интерактивной сессии с `DISPLAY=:11`. После гибели сессии :11 процесс (pid 85627) висел 21ч на несуществующем дисплее, не помогал никому, нигде не зафиксирован (cron/systemd/autostart чисты). Правило: inline-watchdog'и в сессию не запускать, см. [topics/xrdp.md](topics/xrdp.md).
 - ⚠️ **Policy=Default в sesman.ini плодит отдельные сессии на каждый IP** — плохо для сценария «подключился с работы → из дома». Правильно: `Policy=U`.
 - ⚠️ **chansrv exit(0) на нештатный TCP-обрыв + sesman 0.10.x не перезапускает chansrv при reconnect** (by design, upstream fix — PR #3567 в 0.11+). Симптом: после sleep ноута → reconnect → чёрный экран 10с + сломанный clipboard. Фикс в [scripts/setup-xrdp.sh](../../../scripts/setup-xrdp.sh) `configure_reconnect_script()`: патч `/etc/xrdp/reconnectwm.sh` который сам перезапускает chansrv. Детали: diary 2026-04-21.
+- ⚠️ **Буфер VM→host отваливается после reconnect даже при живом chansrv** (2026-06-11): старый chansrv не делает чистый re-handshake cliprdr. Фикс — `reconnectwm.sh` переведён на **always-restart on reconnect** (kill+respawn chansrv на каждый reconnect). Детали: diary 2026-06-11, topics/xrdp.md.
 
 ## Ссылки
 
 - [topics/xrdp.md](topics/xrdp.md) — полная инфа по настройке xrdp
 - [topics/cliproxy-9router.md](topics/cliproxy-9router.md) — баги панелей cliproxy-api/9router, обходы
+- [topics/proxybridge.md](topics/proxybridge.md) — устройство и проектные решения ProxyBridge (GUI↔сервис, fail-closed NFQUEUE)
+- [onboarding.md](../../../onboarding.md) — точка входа по проекту (обновлён 2026-06-11 под текущее состояние)

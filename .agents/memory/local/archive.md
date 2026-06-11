@@ -1,5 +1,17 @@
 # Архив
 
+## 2026-06
+
+- [x] Расследовать зависание локальных панелей при ProxyBridge + подготовить handoff
+  created: 2026-04-19
+  completed: 2026-06-11
+  result: первопричина доказана (перехват ProxyBridge, NFQUEUE рвёт loopback; НЕ баги бинарей). Фикс/форк вынесен юзером в ОТДЕЛЬНЫЙ репо/сессию. Артефакт-handoff: `tasks/2026-06-11-proxybridge-loopback-bug/report.md`. В aiproxy остаётся миграция на sing-box TUN (см. backlog).
+
+- [x] Починить буфер обмена VM→host, отваливающийся после reconnect (ct 107)
+  created: 2026-04-21
+  completed: 2026-06-11
+  result: корень — старый chansrv, переживший reconnect, не делает чистый re-handshake cliprdr; VM→host буфер мёртв. Фикс: `reconnectwm.sh` переведён на always-restart on reconnect (kill живого chansrv + respawn на каждый reconnect). Залит на ct 107 + в [scripts/setup-xrdp.sh](../../../scripts/setup-xrdp.sh). Заодно закрыта задача слежения за chansrv exit (wrapper-лог чист с 2026-06-03, always-restart перекрывает). Детали: diary 2026-06-11, topics/xrdp.md.
+
 ## 2026-04
 
 - [x] Починить clipboard/раскладку RDP в контейнере 107

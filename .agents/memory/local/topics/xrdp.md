@@ -36,6 +36,10 @@
 
 - ⚠️ **sesman 0.10.x не перезапускает chansrv при reconnect в persistent-сессию** — это by design. В sesman.log при реконнекте нет `Calling exec chansrv`, только запуск пустого `reconnectwm.sh`. Наш фикс — патч `reconnectwm.sh` в [scripts/setup-xrdp.sh](../../../../scripts/setup-xrdp.sh) `configure_reconnect_script`.
 
+- ⚠️ **Буфер обмена VM→host отваливается после reconnect, даже если chansrv ЖИВ** (2026-06-11, ct 107). Старый chansrv, переживший disconnect/reconnect, НЕ делает чистый re-handshake cliprdr-канала с новым подключением → копирование контейнер→хост перестаёт вставляться (host→VM при этом работает). Свежий chansrv (`clipboard_init` в логе) чинит. **Фикс:** `reconnectwm.sh` переведён на **always-restart on reconnect** — убивает живой chansrv и поднимает свежий на КАЖДЫЙ reconnect (не только когда мёртв). Цена: доля секунды простоя буфера/звука/fuse + первая вставка ~2с (норм cliprdr round-trip). Проверено на ct 107 2026-06-11.
+
+- ⚠️ **`clipboard_event_selection_request: unknown target text/plain;charset=utf-8`** — направление host→VM. chansrv 0.10.1 не отдаёт MIME-таргет `text/plain;charset=utf-8`, только X-атомы `UTF8_STRING`/`STRING`/`TEXT`. GTK/Qt-приложения фолбэчат на `UTF8_STRING`, поэтому вставка обычно проходит → косметический шум в логе. Настройкой не лечится (нет опции на список clipboard-таргетов), только апгрейд xrdp до 0.11+.
+
 - ⚠️ **Policy=Default плодит сессии по IP.** Дефолт `Policy=Default` = UBDI (User+Bpp+Display+IP). Reconnect с другого IP → новая сессия, старая остаётся висеть вечно (с `KillDisconnected=false`). Правильно: `Policy=U`.
 
 - ⚠️ **Мёртвые сессии после рестарта xrdp.** Если `systemctl restart xrdp xrdp-sesman` на контейнере с активным коннектом — может остаться осиротевший `startwm.sh` от убитой сессии. Проверять: `ps -ef | grep startwm` после рестарта.
@@ -63,6 +67,11 @@ pct exec <CT_ID> -- bash -c '
 ```
 
 Если chansrv отсутствует для активного display — clipboard у пользователя мёртв, требуется его logout+login.
+
+### Отладка clipboard-событий chansrv
+
+- `[ChansrvLogging] LogFile=/var/log/xrdp-chansrv.${DISPLAY}.log` **файл не пишется** (имя с `${DISPLAY}`/`:` не открывается). Чтобы видеть DEBUG — ставить `SyslogLevel=DEBUG` в `[ChansrvLogging]` и читать `journalctl -t xrdp-chansrv`. Изменение подхватывается только новым chansrv (нужен reconnect, см. always-restart). После диагностики вернуть `SyslogLevel=INFO`.
+- Исходящие (VM→host) clipboard-события логируются на DEBUG; `unknown target` — на ERROR (виден и при INFO).
 
 ## Drive redirection (проброс дисков ПК→VM через RDP)
 

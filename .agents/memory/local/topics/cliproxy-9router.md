@@ -1,5 +1,12 @@
 # cliproxy-api и 9router — известные проблемы
 
+> ⚠️ **ВАЖНАЯ ПОПРАВКА (2026-06-11):** зависание панелей `/management.html`, `/dashboard`,
+> `/login` у ВСЕХ трёх локальных сервисов (cliproxy 8317, 9router 20128, OmniRoute 20129) —
+> это **НЕ баги бинарей**, а перехват **ProxyBridge**. Доказано A/B-тестом (curl из контейнера):
+> при `ProxyBridge --cleanup` все панели открываются за 0.002–0.027с, при активном — timeout 12с.
+> Внешний трафик при этом работает. Старый разбор ниже (по версиям/strace) описывает СИМПТОМЫ,
+> но первопричина — ProxyBridge. Детали и механизм: [proxybridge.md](proxybridge.md), diary 2026-06-11.
+
 ## cliproxy-api (router-for-me/CLIProxyAPI)
 
 ### Порт 8317, панель /management.html

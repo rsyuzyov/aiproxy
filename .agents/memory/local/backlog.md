@@ -2,20 +2,15 @@
 
 ## Активные
 
-- [ ] Следить за chansrv exit в `/var/log/xrdp-chansrv-wrapper.log` на ct 107 после внедрения `reconnectwm.sh` workaround
-  created: 2026-04-21
-  updated: 2026-04-21
-  notes: фикс "автостарт chansrv на reconnect" активен. Хотим убедиться что (а) wrapper продолжает ловить exit(0) на нештатных обрывах и (б) reconnectwm.sh всегда успешно стартует replacement. Через 1-2 недели можно закрыть как done или перевести в idea.
+- [ ] Мигрировать aiproxy с ProxyBridge на sing-box TUN (отказ от ProxyBridge)
+  created: 2026-06-11
+  updated: 2026-06-11
+  notes: РЕШЕНИЕ принято 2026-06-11. Причина: ProxyBridge V4.0-Beta рвёт loopback-трафик локальных панелей (баг в NFQUEUE-перехвате, конфигом не обходится, апстрим мёртв ~4 мес). Реальный кейс юзера — `*:PROXY` (проксировать всё кроме локалки), per-process не используется → это классическая задача прозрачного проксирования. sing-box TUN решает её нативно (loopback в TUN не попадает → панели работают), TCP+UDP, fail-closed (sing-box down → TUN down). sing-box в проекте уже есть (для --gate). Объём: TUN-режим как клиент (не gate), SOCKS5-outbound на внешний прокси, исключения для локалки/LAN, замена пунктов меню/мета-набора --aiproxy, депрекейт proxybridge-скриптов. Per-process проксирование нужно юзеру, но в ДРУГОМ проекте.
 
-- [/] Разобраться с висящей панелью cliproxy-api `/management.html`
-  created: 2026-04-19
-  updated: 2026-04-19
-  notes: не зависит от версии 6.9.26/28/29. Бинарь пишет 2.3 МБ в socket, клиент не получает HTTP-заголовков. Баг строго в HTTP-хендлере бинаря (подтверждено: SPA работает, если открыть management.html локально через file://). Рабочий обход: открывать панель локально на рабочей машине. В config.yaml стоит disable-control-panel: true. Апдейтер выключен. Детали: topics/cliproxy-9router.md.
-
-- [/] Разобраться с deadlock'ом 9router `/login` /`/dashboard` (SSR висит)
-  created: 2026-04-19
-  updated: 2026-04-19
-  notes: после чтения db.json next-server уходит в eventfd wait (strace). Не зависит от версии 0.3.83/0.3.96, флагов, hostname, requireLogin. Обхода нет, API (/api/health и пр.) работает. Апдейтер выключен. Юзер ковыряет сам, issue апстриму пока не открывали. Детали: topics/cliproxy-9router.md.
+- [ ] Забрать скрипт `C:\Users\rsyuzyov\repo\it\admin1\ops\scripts\proxy\redsocks-tune` и заменить им текущие скрипты настройки redsocks в aiproxy
+  created: 2026-06-11
+  updated: 2026-06-11
+  notes: Источник — отдельный репо admin1. Заменить setup-redsocks.sh / proxy-toggle.sh (или их логику) на готовый redsocks-tune. Свериться с текущим поведением (set/on/off/status) перед заменой.
 
 ## Ожидает
 
@@ -25,5 +20,10 @@
   created: 2026-04-17
   updated: 2026-04-17
   notes: DEBUG не критичен (7.5MB/день при 10 юзерах с новым logrotate), но в штатном режиме держать INFO
+
+- [ ] Добавить vscode в мета-набор --aiproxy (или отдельную опцию в дефолтный набор)
+  created: 2026-06-11
+  updated: 2026-06-11
+  notes: Сейчас vscode только отдельным флагом --vscode, в --aiproxy не входит. Юзер ставит дефолтный набор + vscode вручную. Рассмотреть включение в мета-набор.
 
 Завершённые задачи: см. `archive.md`
