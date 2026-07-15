@@ -5,7 +5,7 @@
 - [x] Расследовать зависание локальных панелей при ProxyBridge + подготовить handoff
   created: 2026-04-19
   completed: 2026-06-11
-  result: первопричина доказана (перехват ProxyBridge, NFQUEUE рвёт loopback; НЕ баги бинарей). Фикс/форк вынесен юзером в ОТДЕЛЬНЫЙ репо/сессию. Артефакт-handoff: `tasks/2026-06-11-proxybridge-loopback-bug/report.md`. В aiproxy остаётся миграция на sing-box TUN (см. backlog).
+  result: первопричина доказана (перехват ProxyBridge, NFQUEUE рвёт loopback; НЕ баги бинарей). Фикс/форк вынесен юзером в ОТДЕЛЬНЫЙ репо/сессию. Артефакт-handoff: `tasks/2026-06-11-proxybridge-loopback-bug/report.md`. **ИТОГ (2026-07-16): баг ИСПРАВЛЕН** в форке rsyuzyov/ProxyBridge v3.2.0-loopfix (PR апстриму + неофиц. Linux-сборка) → PB снова рабочий вариант, отказ от него не обязателен. sing-box TUN — теперь второй вариант, не замена (см. backlog + topics/proxybridge.md).
 
 - [x] Починить буфер обмена VM→host, отваливающийся после reconnect (ct 107)
   created: 2026-04-21

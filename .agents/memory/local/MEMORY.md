@@ -1,6 +1,6 @@
 # Memory Index
 
-Последняя оптимизация: 2026-04-21
+Последняя оптимизация: 2026-07-16
 
 ## Проект
 
@@ -26,6 +26,7 @@
 ## Факты
 
 - xrdp 0.10.x **не рестартует умерший `xrdp-chansrv`** при reconnect в существующую сессию — by design
+- **ProxyBridge loopback-баг РЕШЁН** (2026-07-16): зависание всех локальных панелей (cliproxy/9router/OmniRoute) было перехватом ProxyBridge, рвавшим loopback-flow. Исправлено в форке [rsyuzyov/ProxyBridge v3.2.0-loopfix](https://github.com/rsyuzyov/ProxyBridge/releases/tag/v3.2.0-loopfix) (PR апстриму + неофиц. Linux-сборка). PB снова полноценный вариант наряду с sing-box TUN — см. [topics/proxybridge.md](topics/proxybridge.md)
 - Клиент RDP сообщает свою текущую активную раскладку (keylayout, напр. 0x00000419=ru) — xrdp ставит в Xorg только её без переключателя; `us,ru + alt_shift_toggle` возвращается через XDG autostart из setup-xrdp.sh
 
 ## Грабли и уроки
